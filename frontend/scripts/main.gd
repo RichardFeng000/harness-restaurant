@@ -92,8 +92,8 @@ func _build_menu() -> void:
 
 	var center := VBoxContainer.new()
 	center.set_anchors_preset(Control.PRESET_CENTER)
-	center.position = Vector2(-310, -230)
-	center.size = Vector2(620, 460)
+	center.position = Vector2(-310, -270)
+	center.size = Vector2(620, 540)
 	center.add_theme_constant_override("separation", 18)
 	menu_layer.add_child(center)
 
@@ -119,7 +119,7 @@ func _build_menu() -> void:
 	center.add_child(subtitle)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(620, 168)
+	card.custom_minimum_size = Vector2(620, 290)
 	card.add_theme_stylebox_override("panel", _panel_style(COLOR_PANEL, 18, Color(0.25, 0.42, 0.66, 0.45)))
 	center.add_child(card)
 	var card_content := VBoxContainer.new()
@@ -128,7 +128,7 @@ func _build_menu() -> void:
 	card.add_child(card_content)
 
 	var card_title := Label.new()
-	card_title.text = "LOCAL WORKSPACE"
+	card_title.text = "MAIN MENU"
 	card_title.add_theme_font_size_override("font_size", 13)
 	card_title.add_theme_color_override("font_color", COLOR_MUTED)
 	card_content.add_child(card_title)
@@ -139,15 +139,25 @@ func _build_menu() -> void:
 	folder_label.add_theme_color_override("font_color", COLOR_TEXT)
 	card_content.add_child(folder_label)
 
-	var choose := _button("SELECT LOCAL FOLDER", COLOR_CYAN, Color("#071719"))
-	choose.custom_minimum_size = Vector2(0, 54)
+	var new_game := _button("新游戏", COLOR_CYAN, Color("#071719"))
+	new_game.custom_minimum_size = Vector2(0, 48)
+	new_game.pressed.connect(func(): _open_workspace("New Harness Operation"))
+	card_content.add_child(new_game)
+
+	var continue_game := _button("继续游戏", COLOR_PANEL_LIGHT, COLOR_TEXT)
+	continue_game.custom_minimum_size = Vector2(0, 46)
+	continue_game.pressed.connect(_continue_game)
+	card_content.add_child(continue_game)
+
+	var choose := _button("本地位置", COLOR_PANEL_LIGHT, COLOR_TEXT)
+	choose.custom_minimum_size = Vector2(0, 46)
 	choose.pressed.connect(_select_folder)
 	card_content.add_child(choose)
 
-	var demo := _button("ENTER DEMO WORKSPACE", COLOR_PANEL_LIGHT, COLOR_TEXT)
-	demo.custom_minimum_size = Vector2(0, 48)
-	demo.pressed.connect(func(): _open_workspace("Harness Demo"))
-	center.add_child(demo)
+	var settings := _button("设置", COLOR_PANEL_LIGHT, COLOR_TEXT)
+	settings.custom_minimum_size = Vector2(0, 46)
+	settings.pressed.connect(_show_settings_status)
+	card_content.add_child(settings)
 
 	var hint := Label.new()
 	hint.text = "Your files stay on this device. Harness never uploads the folder."
@@ -196,42 +206,55 @@ func _build_game() -> void:
 	_stat_card(stats, "MEMORIES", "12", COLOR_CYAN)
 	_stat_card(stats, "KNOWLEDGE", "4 DOCS", COLOR_ORANGE)
 
-	var body := HSplitContainer.new()
+	var body := Control.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.split_offset = 350
+	body.clip_contents = true
 	shell.add_child(body)
 
-	var left := VBoxContainer.new()
-	left.custom_minimum_size.x = 330
-	left.add_theme_constant_override("separation", 12)
-	body.add_child(left)
+	var map_panel := PanelContainer.new()
+	map_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	map_panel.add_theme_stylebox_override("panel", _panel_style(COLOR_PANEL, 16, Color(0.25, 0.42, 0.66, 0.35)))
+	body.add_child(map_panel)
+
+	var map_layers := Control.new()
+	map_layers.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	map_panel.add_child(map_layers)
+
+	var room_texture := TextureRect.new()
+	room_texture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	room_texture.texture = load("res://frontend/assets/harness-operations-room.png")
+	room_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	room_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	room_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	map_layers.add_child(room_texture)
+
+	var map := AgentMap.new()
+	map.name = "AgentMap"
+	map.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	map_layers.add_child(map)
+
 	var mission := _section("MISSION QUEUE")
-	left.add_child(mission)
+	mission.position = Vector2(20, 20)
+	mission.size = Vector2(285, 270)
+	mission.modulate = Color(1, 1, 1, 0.94)
+	map_layers.add_child(mission)
 	var mission_box := mission.get_child(0) as VBoxContainer
 	_add_task(mission_box, "INDEX RECIPE BOOK", "Knowledge • PDF", COLOR_ORANGE)
 	_add_task(mission_box, "MAP WORKSPACE", "System • Local", COLOR_CYAN)
 	_add_task(mission_box, "BUILD MEMORY GRAPH", "Memory • Agent", COLOR_BLUE)
 
 	run_button = _button("RUN NEXT AGENT", COLOR_CYAN, Color("#071719"))
-	run_button.custom_minimum_size.y = 52
+	run_button.position = Vector2(20, 305)
+	run_button.size = Vector2(285, 52)
 	run_button.pressed.connect(_start_agent_run)
-	left.add_child(run_button)
-
-	var right := VBoxContainer.new()
-	right.add_theme_constant_override("separation", 12)
-	body.add_child(right)
-	var map_panel := PanelContainer.new()
-	map_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	map_panel.add_theme_stylebox_override("panel", _panel_style(COLOR_PANEL, 16, Color(0.25, 0.42, 0.66, 0.35)))
-	right.add_child(map_panel)
-	var map := AgentMap.new()
-	map.name = "AgentMap"
-	map.custom_minimum_size = Vector2(500, 300)
-	map_panel.add_child(map)
+	map_layers.add_child(run_button)
 
 	var console := _section("ACTIVITY STREAM")
-	console.custom_minimum_size.y = 190
-	right.add_child(console)
+	console.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	console.position = Vector2(-400, -175)
+	console.size = Vector2(380, 155)
+	console.modulate = Color(1, 1, 1, 0.94)
+	map_layers.add_child(console)
 	var console_box := console.get_child(0) as VBoxContainer
 	progress_bar = ProgressBar.new()
 	progress_bar.max_value = 100
@@ -311,6 +334,13 @@ func _back_to_menu() -> void:
 	menu_layer.show()
 	active_run = false
 	run_button.disabled = false
+
+func _continue_game() -> void:
+	_open_workspace(selected_folder if not selected_folder.is_empty() else "Last Harness Operation")
+
+func _show_settings_status() -> void:
+	folder_label.text = "Settings: audio on • window 1280×720"
+	folder_label.add_theme_color_override("font_color", COLOR_CYAN)
 
 func _start_agent_run() -> void:
 	if active_run or task_count <= 0:
@@ -420,56 +450,21 @@ class AgentMap extends Control:
 		queue_redraw()
 
 	func _draw() -> void:
-		var room := Rect2(Vector2(24, 20), size - Vector2(48, 40))
-		draw_rect(room, Color("#1a2940"))
-		var tile := 34.0
-		for x in range(int(room.size.x / tile) + 1):
-			for y in range(int(room.size.y / tile) + 1):
-				var tile_rect := Rect2(room.position + Vector2(x, y) * tile, Vector2(tile, tile))
-				var tile_color := Color("#263a50") if (x + y) % 2 == 0 else Color("#203247")
-				draw_rect(tile_rect.intersection(room), tile_color)
-
-		# Thick room walls, inspired by a compact top-down co-op workspace.
-		draw_rect(Rect2(room.position, Vector2(room.size.x, 18)), Color("#6e3c34"))
-		draw_rect(Rect2(room.position + Vector2(0, room.size.y - 18), Vector2(room.size.x, 18)), Color("#6e3c34"))
-		draw_rect(Rect2(room.position, Vector2(18, room.size.y)), Color("#6e3c34"))
-		draw_rect(Rect2(room.position + Vector2(room.size.x - 18, 0), Vector2(18, room.size.y)), Color("#6e3c34"))
-
-		var center := room.get_center()
-		var stations := [
-			Rect2(room.position + Vector2(48, 44), Vector2(150, 62)),
-			Rect2(room.position + Vector2(room.size.x - 198, 44), Vector2(150, 62)),
-			Rect2(room.position + Vector2(48, room.size.y - 106), Vector2(150, 62)),
-			Rect2(room.position + Vector2(room.size.x - 198, room.size.y - 106), Vector2(150, 62)),
-		]
-		var station_colors := [COLOR_ORANGE, COLOR_CYAN, COLOR_BLUE, COLOR_GREEN]
-		for index in range(stations.size()):
-			var station: Rect2 = stations[index]
-			draw_rect(station, Color("#a86439"))
-			draw_rect(station.grow(-7), Color("#d99a4f"))
-			for slot in range(3):
-				var slot_pos := station.position + Vector2(28 + slot * 47, station.size.y * 0.5)
-				draw_circle(slot_pos, 13, Color("#162338"))
-				draw_arc(slot_pos, 13, 0, TAU, 24, station_colors[index], 3)
-
-		# Central task conveyor.
-		var conveyor := Rect2(center - Vector2(34, room.size.y * 0.32), Vector2(68, room.size.y * 0.64))
-		draw_rect(conveyor, Color("#bb743d"))
-		draw_rect(conveyor.grow(-8), Color("#e0a04f"))
-		for step in range(5):
-			var item_pos := Vector2(center.x, conveyor.position.y + 35 + step * (conveyor.size.y - 70) / 4.0)
-			var accent: Color = [COLOR_CYAN, COLOR_BLUE, COLOR_ORANGE][step % 3]
-			draw_circle(item_pos, 17, Color("#132238"))
-			draw_circle(item_pos, 7, accent)
-
-		# Two animated agent workers moving between stations.
-		var agent_a_start: Vector2 = stations[0].get_center() + Vector2(0, 52)
-		var agent_a_end: Vector2 = conveyor.get_center() + Vector2(-68, 0)
-		var agent_b_start: Vector2 = stations[3].get_center() - Vector2(0, 52)
-		var agent_b_end: Vector2 = conveyor.get_center() + Vector2(68, 0)
+		# Dynamic agents are drawn over the generated three-quarter-view room.
+		var agent_a_start := Vector2(size.x * 0.30, size.y * 0.34)
+		var agent_a_end := Vector2(size.x * 0.47, size.y * 0.52)
+		var agent_b_start := Vector2(size.x * 0.72, size.y * 0.70)
+		var agent_b_end := Vector2(size.x * 0.55, size.y * 0.48)
 		var phase := (sin(time * 1.25) + 1.0) * 0.5
 		_draw_agent(agent_a_start.lerp(agent_a_end, phase), COLOR_CYAN, -1.0)
 		_draw_agent(agent_b_start.lerp(agent_b_end, 1.0 - phase), COLOR_ORANGE, 1.0)
+		for marker in [
+			Vector2(size.x * 0.25, size.y * 0.26),
+			Vector2(size.x * 0.74, size.y * 0.26),
+			Vector2(size.x * 0.26, size.y * 0.72),
+			Vector2(size.x * 0.74, size.y * 0.72),
+		]:
+			draw_arc(marker, 18 + sin(time * 2.0) * 3.0, 0, TAU, 28, Color(COLOR_CYAN, 0.75), 3)
 
 	func _draw_agent(position: Vector2, accent: Color, facing: float) -> void:
 		draw_circle(position + Vector2(0, 10), 17, Color(0, 0, 0, 0.22))
