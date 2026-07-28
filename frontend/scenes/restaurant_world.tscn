@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource path="res://frontend/scenes/restaurant_v4.tscn" type="PackedScene" id="1_layered"]
+
+[node name="RestaurantWorld" type="Node2D"]
+
+[node name="LayeredRestaurant" parent="." instance=ExtResource("1_layered")]

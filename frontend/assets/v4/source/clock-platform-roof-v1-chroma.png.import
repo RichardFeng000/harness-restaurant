@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dj307l5ag0q7j"
-path="res://.godot/imported/harness-operations-room.png-1b8233af2eaf300193aa9c2a0b6b9980.ctex"
+uid="uid://ddp4ybenx1h6j"
+path="res://.godot/imported/clock-platform-roof-v1-chroma.png-dad81b8e6bd64f7d1e5a2ed2bf03e0e6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://frontend/assets/harness-operations-room.png"
-dest_files=["res://.godot/imported/harness-operations-room.png-1b8233af2eaf300193aa9c2a0b6b9980.ctex"]
+source_file="res://frontend/assets/v4/source/clock-platform-roof-v1-chroma.png"
+dest_files=["res://.godot/imported/clock-platform-roof-v1-chroma.png-dad81b8e6bd64f7d1e5a2ed2bf03e0e6.ctex"]
 
 [params]
 

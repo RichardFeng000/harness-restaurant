@@ -1,0 +1,200 @@
+[gd_scene format=3 uid="uid://cou2cj7ohj42v"]
+
+[ext_resource type="Texture2D" uid="uid://glgbo742vhm1" path="res://frontend/assets/v4/environment/architecture-office-doorfree.png" id="1_office"]
+[ext_resource type="Texture2D" uid="uid://mek1qsn81s6w" path="res://frontend/assets/v4/sprites/kitchen/fridge.png" id="2_fridge"]
+[ext_resource type="Texture2D" uid="uid://816kv7nlfexc" path="res://frontend/assets/v4/sprites/kitchen/oven.png" id="3_oven"]
+[ext_resource type="Texture2D" uid="uid://cml45k1yclr6" path="res://frontend/assets/v4/sprites/kitchen/stove.png" id="4_stove"]
+[ext_resource type="Texture2D" uid="uid://dvkhb44xhkw15" path="res://frontend/assets/v4/sprites/kitchen/fryer.png" id="5_fryer"]
+[ext_resource type="Texture2D" uid="uid://b5k7fa6gwon4" path="res://frontend/assets/v4/sprites/kitchen/sink.png" id="6_sink"]
+[ext_resource type="Texture2D" uid="uid://bn5g3b23m3yud" path="res://frontend/assets/v4/sprites/kitchen/serving_pass_natural.png" id="7_pass"]
+[ext_resource type="Texture2D" uid="uid://0rhe10a8q8r5" path="res://frontend/assets/v4/sprites/kitchen/prep_counter.png" id="8_prep"]
+[ext_resource type="Texture2D" uid="uid://cpeu4kcrj5nc6" path="res://frontend/assets/v4/sprites/kitchen/ingredient_shelf.png" id="9_shelf"]
+[ext_resource type="Texture2D" uid="uid://da2yab8tgbmtt" path="res://frontend/assets/v4/sprites/furniture/dining_table_two_seat.png" id="10_table"]
+[ext_resource type="Texture2D" uid="uid://cyo2f60cwpy1s" path="res://frontend/assets/v4/sprites/furniture/manager_desk.png" id="11_desk"]
+[ext_resource type="Texture2D" uid="uid://lb5iq87o6iej" path="res://frontend/assets/v4/sprites/furniture/office_storage.png" id="12_storage"]
+[ext_resource type="Texture2D" uid="uid://bdk43p7rmfg2b" path="res://frontend/assets/v4/sprites/furniture/coat_stand-clean.png" id="13_coat"]
+[ext_resource type="Texture2D" uid="uid://bxusechspd1pt" path="res://frontend/assets/v4/sprites/furniture/waiting_bench_six_seat.png" id="14_bench"]
+[ext_resource type="Texture2D" uid="uid://b5i4vb3uyy7kb" path="res://frontend/assets/v4/sprites/furniture/cashier_counter.png" id="16_cashdesk"]
+[ext_resource type="Texture2D" uid="uid://d2d2jfyqr50lj" path="res://frontend/assets/v4/sprites/furniture/hamster_clock.png" id="17_clock"]
+[ext_resource type="Texture2D" uid="uid://drns2wctxmah" path="res://frontend/assets/v4/sprites/staff/manager.png" id="18_manager"]
+[ext_resource type="Texture2D" uid="uid://gqlgawvkshyx" path="res://frontend/assets/v4/sprites/staff/head_chef.png" id="19_head"]
+[ext_resource type="Texture2D" uid="uid://ckaqm4w15j2hq" path="res://frontend/assets/v4/sprites/staff/sous_chef.png" id="20_sous"]
+[ext_resource type="Texture2D" uid="uid://ddvbvd0ra6ske" path="res://frontend/assets/v4/sprites/staff/expeditor.png" id="21_expeditor"]
+[ext_resource type="Texture2D" uid="uid://eo3qo72g6v7w" path="res://frontend/assets/v4/sprites/staff/waiter.png" id="22_waiter"]
+[ext_resource type="Texture2D" uid="uid://segekttaxbv4" path="res://frontend/assets/v4/sprites/staff/cashier.png" id="23_cashier"]
+[ext_resource type="Texture2D" uid="uid://bebsx71qsr4pa" path="res://frontend/assets/v4/environment/architecture-kitchen-doorfree.png" id="24_kitchen_room"]
+[ext_resource type="Texture2D" uid="uid://bw01euhx513mi" path="res://frontend/assets/v4/sprites/furniture/restroom_module_v2.png" id="25_restroom_room"]
+[ext_resource type="Texture2D" uid="uid://cuedu0edet08b" path="res://frontend/assets/v4/environment/architecture-dining-doorfree.png" id="26_dining_room"]
+[ext_resource type="Texture2D" uid="uid://dxu01oxfu46xf" path="res://frontend/assets/v4/sprites/furniture/swing_door.png" id="27_swing_door"]
+[ext_resource type="Texture2D" uid="uid://qja3t4880285" path="res://frontend/assets/v4/sprites/furniture/wc_door_module_v2.png" id="28_wc_door"]
+
+[node name="RestaurantV4" type="Node2D" unique_id=1296810409]
+
+[node name="Architecture" type="Node2D" parent="." unique_id=1668524370]
+
+[node name="OfficeRegion" type="Sprite2D" parent="Architecture" unique_id=1169526258]
+position = Vector2(176.06, 181.61)
+scale = Vector2(0.76555, 0.76555)
+texture = ExtResource("1_office")
+
+[node name="KitchenRegion" type="Sprite2D" parent="Architecture" unique_id=1355533685]
+position = Vector2(687.09, 181.61)
+scale = Vector2(0.76555, 0.76555)
+texture = ExtResource("24_kitchen_room")
+
+[node name="RestroomRegion_test" type="Sprite2D" parent="Architecture" unique_id=161374894]
+position = Vector2(2032.1658, 320.64154)
+scale = Vector2(0.58606684, 0.58606684)
+texture = ExtResource("25_restroom_room")
+
+[node name="RestroomRegion" type="Sprite2D" parent="Architecture" unique_id=213248476]
+position = Vector2(1150, 175)
+scale = Vector2(0.365, 0.365)
+texture = ExtResource("25_restroom_room")
+
+[node name="DiningRegion" type="Sprite2D" parent="Architecture" unique_id=698481470]
+position = Vector2(640, 541.82)
+scale = Vector2(0.76555, 0.76555)
+texture = ExtResource("26_dining_room")
+
+[node name="Furniture" type="Node2D" parent="." unique_id=1908611548]
+z_index = 10
+
+[node name="OfficeStorage" type="Sprite2D" parent="Furniture" unique_id=695506212]
+position = Vector2(252.00002, 98.00006)
+scale = Vector2(0.34, 0.34)
+texture = ExtResource("12_storage")
+
+[node name="OfficeCoatStand" type="Sprite2D" parent="Furniture" unique_id=1855780532]
+position = Vector2(301, 239)
+scale = Vector2(0.27083337, 0.2854402)
+texture = ExtResource("13_coat")
+
+[node name="ManagerDesk" type="Sprite2D" parent="Furniture" unique_id=1191343876]
+position = Vector2(183, 157)
+scale = Vector2(0.46140516, 0.4318397)
+texture = ExtResource("11_desk")
+
+[node name="WaitingBench" type="Sprite2D" parent="Furniture" unique_id=250663034]
+position = Vector2(84.99999, 481.99997)
+rotation = 0.057595864
+scale = Vector2(0.175, 0.175)
+texture = ExtResource("14_bench")
+
+[node name="OfficeSwingDoor" type="Sprite2D" parent="Furniture" unique_id=1210034066]
+position = Vector2(219, 312)
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("27_swing_door")
+
+[node name="EntranceSwingDoor" type="Sprite2D" parent="Furniture" unique_id=1803932715]
+position = Vector2(191, 669)
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("27_swing_door")
+
+[node name="CashierCounter" type="Sprite2D" parent="Furniture" unique_id=1063565876]
+position = Vector2(319.99997, 538.00006)
+scale = Vector2(0.42, 0.42)
+texture = ExtResource("16_cashdesk")
+
+[node name="Table1" type="Sprite2D" parent="Furniture" unique_id=200433021]
+position = Vector2(575.5, 440.4)
+scale = Vector2(0.15, 0.15)
+texture = ExtResource("10_table")
+
+[node name="Table2" type="Sprite2D" parent="Furniture" unique_id=594149284]
+position = Vector2(840.5, 440.4)
+scale = Vector2(0.15, 0.15)
+texture = ExtResource("10_table")
+
+[node name="Table3" type="Sprite2D" parent="Furniture" unique_id=1320671020]
+position = Vector2(575.5, 565.4)
+scale = Vector2(0.15, 0.15)
+texture = ExtResource("10_table")
+
+[node name="Table4" type="Sprite2D" parent="Furniture" unique_id=151734523]
+position = Vector2(840.5, 565.4)
+scale = Vector2(0.15, 0.15)
+texture = ExtResource("10_table")
+
+[node name="KitchenFridge" type="Sprite2D" parent="Furniture" unique_id=1213400112]
+position = Vector2(393, 96)
+scale = Vector2(0.46, 0.46)
+texture = ExtResource("2_fridge")
+
+[node name="KitchenOven" type="Sprite2D" parent="Furniture" unique_id=926044560]
+position = Vector2(515, 95)
+scale = Vector2(0.46, 0.46)
+texture = ExtResource("3_oven")
+
+[node name="KitchenStove" type="Sprite2D" parent="Furniture" unique_id=1468072521]
+position = Vector2(625, 94)
+scale = Vector2(0.46, 0.46)
+texture = ExtResource("4_stove")
+
+[node name="KitchenFryer" type="Sprite2D" parent="Furniture" unique_id=380141046]
+position = Vector2(747, 91)
+scale = Vector2(0.46, 0.46)
+texture = ExtResource("5_fryer")
+
+[node name="KitchenSink" type="Sprite2D" parent="Furniture" unique_id=893800356]
+position = Vector2(400, 243)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("6_sink")
+
+[node name="KitchenPrep" type="Sprite2D" parent="Furniture" unique_id=268382281]
+position = Vector2(930, 122)
+scale = Vector2(0.46, 0.46)
+texture = ExtResource("8_prep")
+
+[node name="IngredientShelf" type="Sprite2D" parent="Furniture" unique_id=555295970]
+position = Vector2(962.99994, 185)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("9_shelf")
+
+[node name="ServingPass" type="Sprite2D" parent="Furniture" unique_id=664495671]
+position = Vector2(676, 319)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("7_pass")
+
+[node name="HamsterClock" type="Sprite2D" parent="Furniture" unique_id=1627601282]
+position = Vector2(1110, 135)
+scale = Vector2(0.35, 0.35)
+texture = ExtResource("17_clock")
+
+[node name="WCDoor" type="Sprite2D" parent="Furniture" unique_id=1855862144]
+position = Vector2(1178, 243)
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("28_wc_door")
+
+[node name="Staff" type="Node2D" parent="." unique_id=643375671]
+z_index = 20
+
+[node name="Manager" type="Sprite2D" parent="Staff" unique_id=887383408]
+position = Vector2(289, 378)
+scale = Vector2(0.26, 0.26)
+texture = ExtResource("18_manager")
+
+[node name="HeadChef" type="Sprite2D" parent="Staff" unique_id=1894238003]
+position = Vector2(555, 176)
+scale = Vector2(0.26, 0.26)
+texture = ExtResource("19_head")
+
+[node name="SousChef" type="Sprite2D" parent="Staff" unique_id=1441295889]
+position = Vector2(825, 217)
+scale = Vector2(0.26, 0.26)
+texture = ExtResource("20_sous")
+
+[node name="Expeditor" type="Sprite2D" parent="Staff" unique_id=2112638946]
+position = Vector2(657, 242)
+scale = Vector2(0.25, 0.25)
+texture = ExtResource("21_expeditor")
+
+[node name="Waiter" type="Sprite2D" parent="Staff" unique_id=1144216472]
+position = Vector2(411, 417)
+scale = Vector2(0.26, 0.26)
+texture = ExtResource("22_waiter")
+
+[node name="Cashier" type="Sprite2D" parent="Staff" unique_id=773703173]
+position = Vector2(342, 594)
+scale = Vector2(0.26, 0.26)
+texture = ExtResource("23_cashier")

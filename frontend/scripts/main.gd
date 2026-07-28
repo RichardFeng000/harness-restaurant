@@ -1,6 +1,7 @@
 extends Control
 
 const HarnessApi = preload("res://backend/harness_api.gd")
+const LayeredRestaurant = preload("res://frontend/scenes/restaurant_v4.tscn")
 
 const COLOR_BG := Color("#08101f")
 const COLOR_PANEL := Color("#101b2f")
@@ -20,18 +21,19 @@ var active_run := false
 var run_progress := 0.0
 var task_count := 3
 var energy := 84
+var game_started := false
 
 var menu_layer: Control
 var game_layer: Control
+var pause_layer: Control
 var folder_label: Label
 var activity_log: RichTextLabel
 var progress_bar: ProgressBar
 var run_button: Button
-var task_label: Label
-var energy_label: Label
 var file_dialog: FileDialog
 
 func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	api = HarnessApi.new()
 	api.request("POST", "/api/v2/bootstrap")
 	resized.connect(queue_redraw)
@@ -98,21 +100,21 @@ func _build_menu() -> void:
 	menu_layer.add_child(center)
 
 	var eyebrow := Label.new()
-	eyebrow.text = "AGENT OPERATIONS CONSOLE"
+	eyebrow.text = "CO-OP KITCHEN SIMULATION"
 	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	eyebrow.add_theme_font_size_override("font_size", 13)
 	eyebrow.add_theme_color_override("font_color", COLOR_CYAN)
 	center.add_child(eyebrow)
 
 	var title := Label.new()
-	title.text = "BUILD. RUN. REMEMBER."
+	title.text = "PREP. COOK. SERVE."
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 42)
 	title.add_theme_color_override("font_color", COLOR_TEXT)
 	center.add_child(title)
 
 	var subtitle := Label.new()
-	subtitle.text = "Choose a local workspace and command your agent crew\nthrough chats, knowledge and memory."
+	subtitle.text = "选择本地餐厅档案，指挥你的厨师团队\n备菜、烹饪，并完成顾客点单。"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 17)
 	subtitle.add_theme_color_override("font_color", COLOR_MUTED)
@@ -141,7 +143,7 @@ func _build_menu() -> void:
 
 	var new_game := _button("新游戏", COLOR_CYAN, Color("#071719"))
 	new_game.custom_minimum_size = Vector2(0, 48)
-	new_game.pressed.connect(func(): _open_workspace("New Harness Operation"))
+	new_game.pressed.connect(_new_game)
 	card_content.add_child(new_game)
 
 	var continue_game := _button("继续游戏", COLOR_PANEL_LIGHT, COLOR_TEXT)
@@ -168,114 +170,108 @@ func _build_menu() -> void:
 
 func _build_game() -> void:
 	game_layer = Control.new()
+	game_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	game_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	game_layer.clip_contents = true
 	add_child(game_layer)
 
-	var shell := VBoxContainer.new()
-	shell.set_anchors_preset(Control.PRESET_FULL_RECT)
-	shell.offset_left = 28
-	shell.offset_top = 24
-	shell.offset_right = -28
-	shell.offset_bottom = -24
-	shell.add_theme_constant_override("separation", 16)
-	game_layer.add_child(shell)
+	var restaurant := LayeredRestaurant.instantiate()
+	restaurant.name = "RestaurantScene"
+	game_layer.add_child(restaurant)
 
-	var header := HBoxContainer.new()
-	header.custom_minimum_size.y = 54
-	shell.add_child(header)
-	var logo := Label.new()
-	logo.text = "HARNESS / CONTROL ROOM"
-	logo.add_theme_font_size_override("font_size", 20)
-	logo.add_theme_color_override("font_color", COLOR_CYAN)
-	header.add_child(logo)
-	header.add_spacer(false)
-	var workspace := Label.new()
-	workspace.name = "WorkspaceName"
-	workspace.add_theme_color_override("font_color", COLOR_MUTED)
-	header.add_child(workspace)
-	var back := _button("MENU", COLOR_PANEL_LIGHT, COLOR_TEXT)
-	back.custom_minimum_size = Vector2(88, 38)
-	back.pressed.connect(_back_to_menu)
-	header.add_child(back)
+	var pause_button := _button("Ⅱ", Color(0.05, 0.09, 0.15, 0.88), COLOR_TEXT)
+	pause_button.z_index = 100
+	pause_button.position = Vector2(24, 22)
+	pause_button.size = Vector2(52, 48)
+	pause_button.add_theme_font_size_override("font_size", 22)
+	pause_button.pressed.connect(_pause_game)
+	game_layer.add_child(pause_button)
 
-	var stats := HBoxContainer.new()
-	stats.add_theme_constant_override("separation", 12)
-	shell.add_child(stats)
-	task_label = _stat_card(stats, "ACTIVE TASKS", str(task_count), COLOR_BLUE)
-	energy_label = _stat_card(stats, "AGENT ENERGY", "%d%%" % energy, COLOR_GREEN)
-	_stat_card(stats, "MEMORIES", "12", COLOR_CYAN)
-	_stat_card(stats, "KNOWLEDGE", "4 DOCS", COLOR_ORANGE)
-
-	var body := Control.new()
-	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.clip_contents = true
-	shell.add_child(body)
-
-	var map_panel := PanelContainer.new()
-	map_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	map_panel.add_theme_stylebox_override("panel", _panel_style(COLOR_PANEL, 16, Color(0.25, 0.42, 0.66, 0.35)))
-	body.add_child(map_panel)
-
-	var map_layers := Control.new()
-	map_layers.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	map_panel.add_child(map_layers)
-
-	var room_texture := TextureRect.new()
-	room_texture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	room_texture.texture = load("res://frontend/assets/harness-operations-room.png")
-	room_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	room_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	room_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	map_layers.add_child(room_texture)
-
-	var map := AgentMap.new()
-	map.name = "AgentMap"
-	map.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	map_layers.add_child(map)
-
-	var mission := _section("MISSION QUEUE")
-	mission.position = Vector2(20, 20)
-	mission.size = Vector2(285, 270)
-	mission.modulate = Color(1, 1, 1, 0.94)
-	map_layers.add_child(mission)
-	var mission_box := mission.get_child(0) as VBoxContainer
-	_add_task(mission_box, "INDEX RECIPE BOOK", "Knowledge • PDF", COLOR_ORANGE)
-	_add_task(mission_box, "MAP WORKSPACE", "System • Local", COLOR_CYAN)
-	_add_task(mission_box, "BUILD MEMORY GRAPH", "Memory • Agent", COLOR_BLUE)
-
-	run_button = _button("RUN NEXT AGENT", COLOR_CYAN, Color("#071719"))
-	run_button.position = Vector2(20, 305)
-	run_button.size = Vector2(285, 52)
+	run_button = _button("开始烹饪", COLOR_CYAN, Color("#071719"))
+	run_button.z_index = 100
+	run_button.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	run_button.offset_left = 400
+	run_button.offset_right = -400
+	run_button.offset_top = -76
+	run_button.offset_bottom = -26
 	run_button.pressed.connect(_start_agent_run)
-	map_layers.add_child(run_button)
+	game_layer.add_child(run_button)
 
-	var console := _section("ACTIVITY STREAM")
-	console.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	console.position = Vector2(-400, -175)
-	console.size = Vector2(380, 155)
-	console.modulate = Color(1, 1, 1, 0.94)
-	map_layers.add_child(console)
-	var console_box := console.get_child(0) as VBoxContainer
 	progress_bar = ProgressBar.new()
+	progress_bar.z_index = 100
+	progress_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	progress_bar.offset_left = 400
+	progress_bar.offset_right = -400
+	progress_bar.offset_top = -20
+	progress_bar.offset_bottom = -12
 	progress_bar.max_value = 100
 	progress_bar.value = 0
 	progress_bar.show_percentage = false
-	progress_bar.custom_minimum_size.y = 6
-	console_box.add_child(progress_bar)
+	game_layer.add_child(progress_bar)
+
 	activity_log = RichTextLabel.new()
 	activity_log.bbcode_enabled = true
-	activity_log.fit_content = false
-	activity_log.scroll_active = true
-	activity_log.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	activity_log.add_theme_font_size_override("normal_font_size", 13)
-	activity_log.text = "[color=#8290aa]SYSTEM[/color]  Control room ready.\n[color=#58e6d9]DATABASE[/color]  CSV workspace connected."
-	console_box.add_child(activity_log)
+	activity_log.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	activity_log.position = Vector2(88, 25)
+	activity_log.size = Vector2(360, 54)
+	activity_log.add_theme_font_size_override("normal_font_size", 12)
+	activity_log.text = "[color=#58e6d9]厨房准备完毕[/color]\n厨师等待第一份订单"
+	game_layer.add_child(activity_log)
+	activity_log.hide()
+
+	_build_pause_layer()
+
+func _build_pause_layer() -> void:
+	pause_layer = Control.new()
+	pause_layer.z_index = 200
+	pause_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	game_layer.add_child(pause_layer)
+
+	var shade := ColorRect.new()
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.color = Color(0.02, 0.03, 0.05, 0.72)
+	pause_layer.add_child(shade)
+
+	var card := PanelContainer.new()
+	card.set_anchors_preset(Control.PRESET_CENTER)
+	card.position = Vector2(-190, -178)
+	card.size = Vector2(380, 356)
+	card.add_theme_stylebox_override("panel", _panel_style(Color("#101b2f"), 18, Color(COLOR_CYAN, 0.55)))
+	pause_layer.add_child(card)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 16)
+	card.add_child(box)
+
+	var title := Label.new()
+	title.text = "游戏暂停"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 30)
+	title.add_theme_color_override("font_color", COLOR_TEXT)
+	box.add_child(title)
+
+	var save_button := _button("保存进度", COLOR_CYAN, Color("#071719"))
+	save_button.custom_minimum_size.y = 52
+	save_button.pressed.connect(_save_progress)
+	box.add_child(save_button)
+
+	var menu_button := _button("返回菜单", COLOR_PANEL_LIGHT, COLOR_TEXT)
+	menu_button.custom_minimum_size.y = 52
+	menu_button.pressed.connect(_back_to_menu)
+	box.add_child(menu_button)
+
+	var resume_button := _button("返回游戏", COLOR_PANEL_LIGHT, COLOR_TEXT)
+	resume_button.custom_minimum_size.y = 52
+	resume_button.pressed.connect(_resume_game)
+	box.add_child(resume_button)
+
+	pause_layer.hide()
 
 func _build_file_dialog() -> void:
 	file_dialog = FileDialog.new()
 	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_DIR
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	file_dialog.title = "Select Harness Workspace"
+	file_dialog.title = "选择本地餐厅档案"
 	file_dialog.dir_selected.connect(_open_workspace)
 	add_child(file_dialog)
 
@@ -321,45 +317,85 @@ func _folder_picked_from_web(arguments: Array) -> void:
 		_open_workspace(value)
 
 func _open_workspace(folder: String) -> void:
-	selected_folder = folder.get_file() if not folder.is_empty() else "Harness Workspace"
+	selected_folder = folder.get_file() if not folder.is_empty() else "Harness Restaurant"
 	folder_label.text = selected_folder
-	var workspace := game_layer.find_child("WorkspaceName", true, false) as Label
-	workspace.text = "WORKSPACE  /  %s" % selected_folder.to_upper()
 	menu_layer.hide()
 	game_layer.show()
-	activity_log.text = "[color=#58e6d9]WORKSPACE[/color]  %s mounted locally.\n[color=#8290aa]SYSTEM[/color]  Harness agents standing by." % selected_folder
+	pause_layer.hide()
+	run_button.visible = not game_started
+	progress_bar.visible = not game_started
+	activity_log.text = "[color=#58e6d9]%s[/color]\n餐厅已开门，厨房准备完成" % selected_folder
+
+func _new_game() -> void:
+	game_started = false
+	task_count = 3
+	energy = 84
+	run_button.text = "开始烹饪"
+	run_button.disabled = false
+	progress_bar.value = 0
+	_open_workspace("新餐厅")
 
 func _back_to_menu() -> void:
+	pause_layer.hide()
 	game_layer.hide()
 	menu_layer.show()
 	active_run = false
 	run_button.disabled = false
 
 func _continue_game() -> void:
-	_open_workspace(selected_folder if not selected_folder.is_empty() else "Last Harness Operation")
+	if not FileAccess.file_exists("user://restaurant_save.json"):
+		_open_workspace(selected_folder if not selected_folder.is_empty() else "上次的餐厅")
+		return
+	var save_file := FileAccess.open("user://restaurant_save.json", FileAccess.READ)
+	var data = JSON.parse_string(save_file.get_as_text())
+	if data is Dictionary:
+		selected_folder = str(data.get("restaurant", "上次的餐厅"))
+		task_count = int(data.get("task_count", 3))
+		energy = int(data.get("energy", 84))
+		game_started = bool(data.get("game_started", true))
+	_open_workspace(selected_folder)
+	if game_started:
+		run_button.hide()
+		progress_bar.hide()
+		activity_log.text = "[color=#62e59c]进度已恢复[/color]\n欢迎回到餐厅"
 
 func _show_settings_status() -> void:
 	folder_label.text = "Settings: audio on • window 1280×720"
 	folder_label.add_theme_color_override("font_color", COLOR_CYAN)
 
 func _start_agent_run() -> void:
-	if active_run or task_count <= 0:
+	game_started = true
+	active_run = false
+	run_button.hide()
+	progress_bar.hide()
+	activity_log.text = "[color=#5a8cff]游戏开始[/color]\n餐厅正式开始工作"
+
+func _pause_game() -> void:
+	pause_layer.show()
+
+func _resume_game() -> void:
+	pause_layer.hide()
+
+func _save_progress() -> void:
+	var save_data := {
+		"restaurant": selected_folder,
+		"task_count": task_count,
+		"energy": energy,
+		"game_started": game_started,
+	}
+	var save_file := FileAccess.open("user://restaurant_save.json", FileAccess.WRITE)
+	if save_file == null:
 		return
-	active_run = true
-	run_progress = 0.0
-	run_button.disabled = true
-	run_button.text = "AGENT RUNNING..."
-	activity_log.append_text("\n[color=#5a8cff]RUN[/color]  Agent dispatched to workspace.")
+	save_file.store_string(JSON.stringify(save_data))
+	activity_log.text = "[color=#62e59c]保存成功[/color]\n餐厅进度已保存到本地"
 
 func _finish_agent_run() -> void:
 	active_run = false
 	task_count = maxi(task_count - 1, 0)
 	energy = maxi(energy - 9, 0)
-	task_label.text = str(task_count)
-	energy_label.text = "%d%%" % energy
 	run_button.disabled = task_count <= 0
-	run_button.text = "ALL TASKS COMPLETE" if task_count <= 0 else "RUN NEXT AGENT"
-	activity_log.append_text("\n[color=#62e59c]COMPLETE[/color]  Task resolved. Memory checkpoint saved.")
+	run_button.text = "全部订单已完成" if task_count <= 0 else "制作下一份订单"
+	activity_log.append_text("\n[color=#62e59c]SERVED[/color]  菜品已出餐，餐厅进度已保存。")
 
 func _stat_card(parent: Container, label_text: String, value: String, accent: Color) -> Label:
 	var card := PanelContainer.new()
@@ -437,38 +473,3 @@ func _panel_style(color: Color, radius: int, border: Color) -> StyleBoxFlat:
 	style.content_margin_top = 13
 	style.content_margin_bottom = 13
 	return style
-
-class AgentMap extends Control:
-	var time := 0.0
-
-	func _ready() -> void:
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-		set_process(true)
-
-	func _process(delta: float) -> void:
-		time += delta
-		queue_redraw()
-
-	func _draw() -> void:
-		# Dynamic agents are drawn over the generated three-quarter-view room.
-		var agent_a_start := Vector2(size.x * 0.30, size.y * 0.34)
-		var agent_a_end := Vector2(size.x * 0.47, size.y * 0.52)
-		var agent_b_start := Vector2(size.x * 0.72, size.y * 0.70)
-		var agent_b_end := Vector2(size.x * 0.55, size.y * 0.48)
-		var phase := (sin(time * 1.25) + 1.0) * 0.5
-		_draw_agent(agent_a_start.lerp(agent_a_end, phase), COLOR_CYAN, -1.0)
-		_draw_agent(agent_b_start.lerp(agent_b_end, 1.0 - phase), COLOR_ORANGE, 1.0)
-		for marker in [
-			Vector2(size.x * 0.25, size.y * 0.26),
-			Vector2(size.x * 0.74, size.y * 0.26),
-			Vector2(size.x * 0.26, size.y * 0.72),
-			Vector2(size.x * 0.74, size.y * 0.72),
-		]:
-			draw_arc(marker, 18 + sin(time * 2.0) * 3.0, 0, TAU, 28, Color(COLOR_CYAN, 0.75), 3)
-
-	func _draw_agent(position: Vector2, accent: Color, facing: float) -> void:
-		draw_circle(position + Vector2(0, 10), 17, Color(0, 0, 0, 0.22))
-		draw_circle(position, 18, Color("#e7eef8"))
-		draw_circle(position + Vector2(0, 3), 13, accent)
-		draw_circle(position + Vector2(facing * 7, -5), 4, Color("#08101f"))
-		draw_arc(position, 21 + sin(time * 3.0) * 2.0, 0, TAU, 28, Color(accent, 0.45), 2)
