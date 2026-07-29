@@ -12,10 +12,18 @@ const COLOR_TEXT := Color("#e9f1ff")
 const COLOR_MUTED := Color("#8290aa")
 const COLOR_GREEN := Color("#62e59c")
 const COLOR_ORANGE := Color("#ffb45c")
+const MENU_WOOD := Color("#2a160f")
+const MENU_WOOD_LIGHT := Color("#44251a")
+const MENU_CREAM := Color("#fff1d2")
+const MENU_GOLD := Color("#e7ad55")
+const MENU_RED := Color("#c94f38")
+const WORKSPACE_CONFIG_PATH := "user://workspace.json"
+const SAVE_PATH := "user://restaurant_save.json"
 
 var api
 var folder_callback
 var selected_folder := ""
+var folder_selection_mode := "open"
 var game_time := 0.0
 var active_run := false
 var run_progress := 0.0
@@ -40,6 +48,7 @@ func _ready() -> void:
 	_build_menu()
 	_build_game()
 	_build_file_dialog()
+	_load_workspace_preference()
 	game_layer.hide()
 	queue_redraw()
 
@@ -72,6 +81,27 @@ func _build_menu() -> void:
 	menu_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(menu_layer)
 
+	var kitchen_background := TextureRect.new()
+	kitchen_background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	kitchen_background.texture = load("res://frontend/assets/runtime/legacy/environment/restaurant-final-2_5d.png")
+	kitchen_background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	kitchen_background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	kitchen_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu_layer.add_child(kitchen_background)
+
+	var kitchen_shade := ColorRect.new()
+	kitchen_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	kitchen_shade.color = Color(0.08, 0.035, 0.02, 0.72)
+	kitchen_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu_layer.add_child(kitchen_shade)
+
+	var top_bar := ColorRect.new()
+	top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	top_bar.offset_bottom = 86
+	top_bar.color = Color(0.10, 0.045, 0.025, 0.92)
+	top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu_layer.add_child(top_bar)
+
 	var top := HBoxContainer.new()
 	top.position = Vector2(44, 34)
 	top.size = Vector2(size.x - 88, 48)
@@ -81,15 +111,15 @@ func _build_menu() -> void:
 	menu_layer.add_child(top)
 
 	var brand := Label.new()
-	brand.text = "HARNESS  /  V2"
+	brand.text = "HARNESS  /  餐厅厨房"
 	brand.add_theme_font_size_override("font_size", 21)
-	brand.add_theme_color_override("font_color", COLOR_CYAN)
+	brand.add_theme_color_override("font_color", MENU_GOLD)
 	top.add_child(brand)
 	top.add_spacer(false)
 	var build := Label.new()
-	build.text = "LOCAL SIMULATION  •  BUILD 0.1"
+	build.text = "今日营业  ·  本地厨房  ·  BUILD 0.1"
 	build.add_theme_font_size_override("font_size", 12)
-	build.add_theme_color_override("font_color", COLOR_MUTED)
+	build.add_theme_color_override("font_color", MENU_CREAM.darkened(0.25))
 	top.add_child(build)
 
 	var center := VBoxContainer.new()
@@ -100,29 +130,29 @@ func _build_menu() -> void:
 	menu_layer.add_child(center)
 
 	var eyebrow := Label.new()
-	eyebrow.text = "CO-OP KITCHEN SIMULATION"
+	eyebrow.text = "今日厨房  ·  KITCHEN SERVICE"
 	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	eyebrow.add_theme_font_size_override("font_size", 13)
-	eyebrow.add_theme_color_override("font_color", COLOR_CYAN)
+	eyebrow.add_theme_color_override("font_color", MENU_GOLD)
 	center.add_child(eyebrow)
 
 	var title := Label.new()
-	title.text = "PREP. COOK. SERVE."
+	title.text = "HARNESS 餐厅"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 42)
-	title.add_theme_color_override("font_color", COLOR_TEXT)
+	title.add_theme_font_size_override("font_size", 46)
+	title.add_theme_color_override("font_color", MENU_CREAM)
 	center.add_child(title)
 
 	var subtitle := Label.new()
-	subtitle.text = "选择本地餐厅档案，指挥你的厨师团队\n备菜、烹饪，并完成顾客点单。"
+	subtitle.text = "准备食材，安排厨师，招待今天的客人"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 17)
-	subtitle.add_theme_color_override("font_color", COLOR_MUTED)
+	subtitle.add_theme_color_override("font_color", MENU_CREAM.darkened(0.18))
 	center.add_child(subtitle)
 
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(620, 290)
-	card.add_theme_stylebox_override("panel", _panel_style(COLOR_PANEL, 18, Color(0.25, 0.42, 0.66, 0.45)))
+	card.add_theme_stylebox_override("panel", _panel_style(Color(MENU_WOOD, 0.96), 18, Color(MENU_GOLD, 0.85)))
 	center.add_child(card)
 	var card_content := VBoxContainer.new()
 	card_content.add_theme_constant_override("separation", 13)
@@ -130,42 +160,42 @@ func _build_menu() -> void:
 	card.add_child(card_content)
 
 	var card_title := Label.new()
-	card_title.text = "MAIN MENU"
+	card_title.text = "厨房菜单  /  MAIN MENU"
 	card_title.add_theme_font_size_override("font_size", 13)
-	card_title.add_theme_color_override("font_color", COLOR_MUTED)
+	card_title.add_theme_color_override("font_color", MENU_GOLD)
 	card_content.add_child(card_title)
 
 	folder_label = Label.new()
-	folder_label.text = "No folder selected"
+	folder_label.text = "尚未选择餐厅档案"
 	folder_label.add_theme_font_size_override("font_size", 18)
-	folder_label.add_theme_color_override("font_color", COLOR_TEXT)
+	folder_label.add_theme_color_override("font_color", MENU_CREAM)
 	card_content.add_child(folder_label)
 
-	var new_game := _button("新游戏", COLOR_CYAN, Color("#071719"))
+	var new_game := _button("新游戏", MENU_RED, MENU_CREAM)
 	new_game.custom_minimum_size = Vector2(0, 48)
 	new_game.pressed.connect(_new_game)
 	card_content.add_child(new_game)
 
-	var continue_game := _button("继续游戏", COLOR_PANEL_LIGHT, COLOR_TEXT)
+	var continue_game := _button("继续游戏", MENU_WOOD_LIGHT, MENU_CREAM)
 	continue_game.custom_minimum_size = Vector2(0, 46)
 	continue_game.pressed.connect(_continue_game)
 	card_content.add_child(continue_game)
 
-	var choose := _button("本地位置", COLOR_PANEL_LIGHT, COLOR_TEXT)
+	var choose := _button("本地位置", MENU_WOOD_LIGHT, MENU_CREAM)
 	choose.custom_minimum_size = Vector2(0, 46)
-	choose.pressed.connect(_select_folder)
+	choose.pressed.connect(_choose_local_folder)
 	card_content.add_child(choose)
 
-	var settings := _button("设置", COLOR_PANEL_LIGHT, COLOR_TEXT)
+	var settings := _button("设置", MENU_WOOD_LIGHT, MENU_CREAM)
 	settings.custom_minimum_size = Vector2(0, 46)
 	settings.pressed.connect(_show_settings_status)
 	card_content.add_child(settings)
 
 	var hint := Label.new()
-	hint.text = "Your files stay on this device. Harness never uploads the folder."
+	hint.text = "餐厅档案仅保存在本机，不会上传。"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.add_theme_font_size_override("font_size", 12)
-	hint.add_theme_color_override("font_color", COLOR_MUTED)
+	hint.add_theme_color_override("font_color", MENU_CREAM.darkened(0.30))
 	center.add_child(hint)
 
 func _build_game() -> void:
@@ -187,13 +217,20 @@ func _build_game() -> void:
 	pause_button.pressed.connect(_pause_game)
 	game_layer.add_child(pause_button)
 
-	run_button = _button("开始烹饪", COLOR_CYAN, Color("#071719"))
+	run_button = _button("开始烹饪", MENU_RED, MENU_CREAM)
 	run_button.z_index = 100
 	run_button.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	run_button.offset_left = 400
-	run_button.offset_right = -400
-	run_button.offset_top = -76
-	run_button.offset_bottom = -26
+	run_button.offset_left = 470
+	run_button.offset_right = -470
+	run_button.offset_top = -94
+	run_button.offset_bottom = -36
+	run_button.add_theme_font_size_override("font_size", 18)
+	run_button.add_theme_color_override("font_color", MENU_CREAM)
+	run_button.add_theme_color_override("font_hover_color", Color.WHITE)
+	run_button.add_theme_color_override("font_pressed_color", MENU_CREAM)
+	run_button.add_theme_stylebox_override("normal", _cook_button_style(MENU_RED, MENU_GOLD, 7))
+	run_button.add_theme_stylebox_override("hover", _cook_button_style(MENU_RED.lightened(0.08), MENU_CREAM, 10))
+	run_button.add_theme_stylebox_override("pressed", _cook_button_style(MENU_RED.darkened(0.12), MENU_GOLD.darkened(0.12), 3))
 	run_button.pressed.connect(_start_agent_run)
 	game_layer.add_child(run_button)
 
@@ -272,8 +309,12 @@ func _build_file_dialog() -> void:
 	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_DIR
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	file_dialog.title = "选择本地餐厅档案"
-	file_dialog.dir_selected.connect(_open_workspace)
+	file_dialog.dir_selected.connect(_folder_selected)
 	add_child(file_dialog)
+
+func _choose_local_folder() -> void:
+	folder_selection_mode = "open"
+	_select_folder()
 
 func _select_folder() -> void:
 	if OS.has_feature("web"):
@@ -314,17 +355,34 @@ func _folder_picked_from_web(arguments: Array) -> void:
 		folder_label.text = "Could not open folder"
 		folder_label.add_theme_color_override("font_color", Color("#ff718c"))
 	else:
-		_open_workspace(value)
+		_folder_selected(value)
+
+func _folder_selected(folder: String) -> void:
+	if folder.is_empty():
+		return
+	var selection_mode := folder_selection_mode
+	folder_selection_mode = "open"
+	selected_folder = folder
+	_save_workspace_preference()
+	if selection_mode == "continue":
+		_replace_saved_workspace(selected_folder)
+		_continue_game()
+		return
+	if selection_mode == "new_game":
+		_write_progress_file()
+	_open_workspace(selected_folder)
 
 func _open_workspace(folder: String) -> void:
-	selected_folder = folder.get_file() if not folder.is_empty() else "Harness Restaurant"
-	folder_label.text = selected_folder
+	selected_folder = folder if not folder.is_empty() else "Harness Restaurant"
+	var display_name := _workspace_display_name(selected_folder)
+	folder_label.text = display_name
+	folder_label.add_theme_color_override("font_color", MENU_CREAM)
 	menu_layer.hide()
 	game_layer.show()
 	pause_layer.hide()
 	run_button.visible = not game_started
 	progress_bar.visible = not game_started
-	activity_log.text = "[color=#58e6d9]%s[/color]\n餐厅已开门，厨房准备完成" % selected_folder
+	activity_log.text = "[color=#58e6d9]%s[/color]\n餐厅已开门，厨房准备完成" % display_name
 
 func _new_game() -> void:
 	game_started = false
@@ -333,7 +391,10 @@ func _new_game() -> void:
 	run_button.text = "开始烹饪"
 	run_button.disabled = false
 	progress_bar.value = 0
-	_open_workspace("新餐厅")
+	folder_selection_mode = "new_game"
+	folder_label.text = "新游戏需要先选择本地餐厅文件夹"
+	folder_label.add_theme_color_override("font_color", MENU_GOLD)
+	_select_folder()
 
 func _back_to_menu() -> void:
 	pause_layer.hide()
@@ -343,16 +404,26 @@ func _back_to_menu() -> void:
 	run_button.disabled = false
 
 func _continue_game() -> void:
-	if not FileAccess.file_exists("user://restaurant_save.json"):
-		_open_workspace(selected_folder if not selected_folder.is_empty() else "上次的餐厅")
+	var saved_data: Dictionary = {}
+	if FileAccess.file_exists(SAVE_PATH):
+		var save_file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+		if save_file != null:
+			var parsed = JSON.parse_string(save_file.get_as_text())
+			if parsed is Dictionary:
+				saved_data = parsed
+				selected_folder = str(saved_data.get("restaurant", selected_folder))
+
+	if not _workspace_is_available(selected_folder):
+		folder_selection_mode = "continue"
+		folder_label.text = "请先选择本地餐厅文件夹"
+		folder_label.add_theme_color_override("font_color", MENU_GOLD)
+		_select_folder()
 		return
-	var save_file := FileAccess.open("user://restaurant_save.json", FileAccess.READ)
-	var data = JSON.parse_string(save_file.get_as_text())
-	if data is Dictionary:
-		selected_folder = str(data.get("restaurant", "上次的餐厅"))
-		task_count = int(data.get("task_count", 3))
-		energy = int(data.get("energy", 84))
-		game_started = bool(data.get("game_started", true))
+
+	if not saved_data.is_empty():
+		task_count = int(saved_data.get("task_count", 3))
+		energy = int(saved_data.get("energy", 84))
+		game_started = bool(saved_data.get("game_started", true))
 	_open_workspace(selected_folder)
 	if game_started:
 		run_button.hide()
@@ -377,17 +448,74 @@ func _resume_game() -> void:
 	pause_layer.hide()
 
 func _save_progress() -> void:
+	if not _write_progress_file():
+		return
+	_save_workspace_preference()
+	activity_log.text = "[color=#62e59c]保存成功[/color]\n餐厅进度已保存到本地"
+
+func _write_progress_file() -> bool:
 	var save_data := {
 		"restaurant": selected_folder,
 		"task_count": task_count,
 		"energy": energy,
 		"game_started": game_started,
 	}
-	var save_file := FileAccess.open("user://restaurant_save.json", FileAccess.WRITE)
+	var save_file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if save_file == null:
+		return false
+	save_file.store_string(JSON.stringify(save_data))
+	return true
+
+func _replace_saved_workspace(folder: String) -> void:
+	if not FileAccess.file_exists(SAVE_PATH):
+		return
+	var save_file := FileAccess.open(SAVE_PATH, FileAccess.READ)
 	if save_file == null:
 		return
-	save_file.store_string(JSON.stringify(save_data))
-	activity_log.text = "[color=#62e59c]保存成功[/color]\n餐厅进度已保存到本地"
+	var parsed = JSON.parse_string(save_file.get_as_text())
+	if not parsed is Dictionary:
+		return
+	parsed["restaurant"] = folder
+	var updated_file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if updated_file != null:
+		updated_file.store_string(JSON.stringify(parsed))
+
+func _save_workspace_preference() -> void:
+	if selected_folder.is_empty():
+		return
+	var config_file := FileAccess.open(WORKSPACE_CONFIG_PATH, FileAccess.WRITE)
+	if config_file == null:
+		return
+	config_file.store_string(JSON.stringify({"folder": selected_folder}))
+
+func _load_workspace_preference() -> void:
+	if not FileAccess.file_exists(WORKSPACE_CONFIG_PATH):
+		return
+	var config_file := FileAccess.open(WORKSPACE_CONFIG_PATH, FileAccess.READ)
+	if config_file == null:
+		return
+	var data = JSON.parse_string(config_file.get_as_text())
+	if not data is Dictionary:
+		return
+	var saved_folder := str(data.get("folder", ""))
+	if not _workspace_is_available(saved_folder):
+		return
+	selected_folder = saved_folder
+	folder_label.text = "上次位置：%s" % _workspace_display_name(selected_folder)
+	folder_label.add_theme_color_override("font_color", MENU_CREAM)
+
+func _workspace_is_available(folder: String) -> bool:
+	if folder.is_empty():
+		return false
+	if OS.has_feature("web"):
+		return true
+	return DirAccess.dir_exists_absolute(folder)
+
+func _workspace_display_name(folder: String) -> String:
+	if folder.is_empty():
+		return "Harness Restaurant"
+	var display_name := folder.trim_suffix("/").get_file()
+	return display_name if not display_name.is_empty() else folder
 
 func _finish_agent_run() -> void:
 	active_run = false
@@ -472,4 +600,19 @@ func _panel_style(color: Color, radius: int, border: Color) -> StyleBoxFlat:
 	style.content_margin_right = 16
 	style.content_margin_top = 13
 	style.content_margin_bottom = 13
+	return style
+
+func _cook_button_style(color: Color, border: Color, shadow_size: int) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.border_color = border
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(16)
+	style.content_margin_left = 28
+	style.content_margin_right = 28
+	style.content_margin_top = 15
+	style.content_margin_bottom = 15
+	style.shadow_color = Color(0.08, 0.025, 0.01, 0.72)
+	style.shadow_size = shadow_size
+	style.shadow_offset = Vector2(0, 5)
 	return style

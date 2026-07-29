@@ -88,47 +88,47 @@ func _atlas_texture() -> AtlasTexture:
 	var cell_size := Vector2i.ZERO
 	match kind:
 		Kind.TABLE:
-			atlas_path = "res://frontend/assets/atlases/restaurant-props.png"
+			atlas_path = "res://frontend/assets/runtime/legacy/atlases/restaurant-props.png"
 			cell = Vector2i(0, 0)
 			cell_size = Vector2i(362, 362)
 		Kind.CHAIR:
-			atlas_path = "res://frontend/assets/atlases/restaurant-props.png"
+			atlas_path = "res://frontend/assets/runtime/legacy/atlases/restaurant-props.png"
 			cell = Vector2i(1, 0)
 			cell_size = Vector2i(362, 362)
 		Kind.BENCH:
-			atlas_path = "res://frontend/assets/atlases/restaurant-props.png"
+			atlas_path = "res://frontend/assets/runtime/legacy/atlases/restaurant-props.png"
 			cell = Vector2i(2, 0)
 			cell_size = Vector2i(362, 362)
 		Kind.PODIUM:
-			atlas_path = "res://frontend/assets/atlases/restaurant-props.png"
+			atlas_path = "res://frontend/assets/runtime/legacy/atlases/restaurant-props.png"
 			cell = Vector2i(3, 0)
 			cell_size = Vector2i(362, 362)
 		Kind.DESK:
-			atlas_path = "res://frontend/assets/atlases/restaurant-props.png"
+			atlas_path = "res://frontend/assets/runtime/legacy/atlases/restaurant-props.png"
 			cell = Vector2i(0, 1)
 			cell_size = Vector2i(362, 362)
 		Kind.COMPUTER:
-			atlas_path = "res://frontend/assets/atlases/restaurant-props.png"
+			atlas_path = "res://frontend/assets/runtime/legacy/atlases/restaurant-props.png"
 			cell = Vector2i(1, 1)
 			cell_size = Vector2i(362, 362)
 		Kind.WC_DOOR, Kind.DOOR:
-			atlas_path = "res://frontend/assets/atlases/restaurant-props.png"
+			atlas_path = "res://frontend/assets/runtime/legacy/atlases/restaurant-props.png"
 			cell = Vector2i(0, 2)
 			cell_size = Vector2i(362, 362)
 		Kind.COUNTER:
-			atlas_path = "res://frontend/assets/atlases/kitchen-props.png"
+			atlas_path = "res://frontend/assets/runtime/legacy/atlases/kitchen-props.png"
 			cell = Vector2i(0, 1)
 			cell_size = Vector2i(384, 341)
 		Kind.STOVE:
-			atlas_path = "res://frontend/assets/atlases/kitchen-props.png"
+			atlas_path = "res://frontend/assets/runtime/legacy/atlases/kitchen-props.png"
 			cell = Vector2i(1, 0)
 			cell_size = Vector2i(384, 341)
 		Kind.SINK:
-			atlas_path = "res://frontend/assets/atlases/kitchen-props.png"
+			atlas_path = "res://frontend/assets/runtime/legacy/atlases/kitchen-props.png"
 			cell = Vector2i(2, 0)
 			cell_size = Vector2i(384, 341)
 		Kind.FRIDGE:
-			atlas_path = "res://frontend/assets/atlases/kitchen-props.png"
+			atlas_path = "res://frontend/assets/runtime/legacy/atlases/kitchen-props.png"
 			cell = Vector2i(3, 0)
 			cell_size = Vector2i(384, 341)
 		_:

@@ -38,7 +38,7 @@ func _role_texture() -> AtlasTexture:
 		"主管": 5,
 	}.get(role, 0))
 	var texture := AtlasTexture.new()
-	texture.atlas = load("res://frontend/assets/atlases/staff.png")
+	texture.atlas = load("res://frontend/assets/runtime/legacy/atlases/staff.png")
 	texture.region = Rect2((index % 3) * 512, (index / 3) * 512, 512, 512)
 	return texture
 

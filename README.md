@@ -16,6 +16,9 @@ project.godot  Godot 项目配置
 Godot 主场景为 `res://frontend/scenes/main.tscn`，Web 导出配置位于
 `export_presets.cfg`。
 
+Godot 编辑器的启动、重启和场景缓存处理方法见
+[GODOT_WORKFLOW.md](GODOT_WORKFLOW.md)。
+
 ## GitHub Pages
 
 `dist/` 中包含已导出的 Godot Web 游戏。推送到 `main` 分支后，
