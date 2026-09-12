@@ -34,5 +34,15 @@ Godot 编辑器的启动、重启和场景缓存处理方法见
 
 ## GitHub Pages
 
+在线体验：[Harness Kitchen](https://richardfeng000.github.io/harness-visual-restaurant/)。
+
 `dist/` 中包含已导出的 Godot Web 游戏，修改源码后需重新导出才能更新网页版。推送到 `main` 分支后，
 `.github/workflows/deploy-pages.yml` 会把该目录自动发布到 GitHub Pages。
+
+安装与编辑器版本一致的 Godot Web 导出模板后执行：
+
+```bash
+./scripts/run.sh --headless --export-release Web dist/index.html
+```
+
+Web 包仅保留运行资源，本地配置、备份、测试、素材源文件与归档不参与发布。
