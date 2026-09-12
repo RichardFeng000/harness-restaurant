@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://bhq77udx5gpai"
+
+[deps]
+
+files=["res://database/staff_permissions.display.translation", "res://database/staff_permissions.role.translation", "res://database/staff_permissions.can.translation", "res://database/staff_permissions.can.translation", "res://database/staff_permissions.can.translation", "res://database/staff_permissions.can.translation", "res://database/staff_permissions.can.translation"]
+
+source_file="res://database/staff_permissions.csv"
+dest_files=["res://database/staff_permissions.display.translation", "res://database/staff_permissions.role.translation", "res://database/staff_permissions.can.translation", "res://database/staff_permissions.can.translation", "res://database/staff_permissions.can.translation", "res://database/staff_permissions.can.translation", "res://database/staff_permissions.can.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

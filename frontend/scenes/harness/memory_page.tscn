@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://frontend/ui/book_empty_page.gd" id="1"]
+
+[node name="MemoryPage" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+page_title = "记忆"
+page_description = "为员工偏好、工作上下文与长期记录留一页。"
+empty_description = "长期记忆的记录、检索与管理尚未开放。"
+monogram = "忆"

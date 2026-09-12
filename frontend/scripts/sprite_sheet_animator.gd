@@ -4,7 +4,7 @@ extends Sprite2D
 @export var rows := 4
 @export var frame_count := 16
 @export var frames_per_second := 12.0
-@export var autoplay := true
+@export var autoplay := false
 
 var playing := false
 var frame_clock := 0.0
@@ -34,4 +34,3 @@ func stop() -> void:
 	playing = false
 	frame_clock = 0.0
 	frame = 0
-

@@ -17,16 +17,32 @@
 [ext_resource type="Texture2D" uid="uid://b5i4vb3uyy7kb" path="res://frontend/assets/runtime/v4/sprites/furniture/cashier_counter.png" id="16_cashdesk"]
 [ext_resource type="Texture2D" uid="uid://1kota21vhmw5" path="res://frontend/assets/runtime/v4/sprites/furniture/clock_face_round_v1.png" id="17_clock"]
 [ext_resource type="Texture2D" uid="uid://cl5ovq2x4bhqc" path="res://frontend/assets/runtime/v4/sprites/staff/manager/manager_north_v2.png" id="18_manager"]
-[ext_resource type="Texture2D" uid="uid://bsc2yuqxphuui" path="res://frontend/assets/runtime/v4/sprites/staff/head_chef/head_chef.png" id="19_head"]
-[ext_resource type="Texture2D" uid="uid://bvcn5pfawurnx" path="res://frontend/assets/runtime/v4/sprites/staff/sous_chef/sous_chef.png" id="20_sous"]
-[ext_resource type="Texture2D" uid="uid://c23m3dpbkwwvl" path="res://frontend/assets/runtime/v4/sprites/staff/expeditor/expeditor.png" id="21_expeditor"]
-[ext_resource type="Texture2D" uid="uid://bn5uebdqkn2bt" path="res://frontend/assets/runtime/v4/sprites/staff/waiter/waiter.png" id="22_waiter"]
+[ext_resource type="Texture2D" uid="uid://csk2l17orx6x1" path="res://frontend/assets/runtime/v4/sprites/staff/head_chef/standing/head_chef_east_v1.png" id="19_head_east"]
+[ext_resource type="Texture2D" uid="uid://vhvys6cher5h" path="res://frontend/assets/runtime/v4/sprites/staff/head_chef/standing/head_chef_north_v1.png" id="19_head_north"]
+[ext_resource type="Texture2D" uid="uid://lky47f86ufj1" path="res://frontend/assets/runtime/v4/sprites/staff/head_chef/standing/head_chef_south_v1.png" id="19_head_south"]
+[ext_resource type="Texture2D" uid="uid://hafkkhcn7ua8" path="res://frontend/assets/runtime/v4/sprites/staff/head_chef/head_chef_walk_4x4_v1.png" id="19_head_walk"]
+[ext_resource type="Texture2D" uid="uid://dni4b7ptjur31" path="res://frontend/assets/runtime/v4/sprites/staff/head_chef/standing/head_chef_west_v1.png" id="19_head_west"]
+[ext_resource type="Texture2D" uid="uid://c3b4br48b0qrv" path="res://frontend/assets/runtime/v4/sprites/staff/sous_chef/standing/sous_chef_east_v1.png" id="20_sous_east"]
+[ext_resource type="Texture2D" uid="uid://ccphdnbsr5ik4" path="res://frontend/assets/runtime/v4/sprites/staff/sous_chef/standing/sous_chef_north_v1.png" id="20_sous_north"]
+[ext_resource type="Texture2D" uid="uid://dexntsi8brqq7" path="res://frontend/assets/runtime/v4/sprites/staff/sous_chef/standing/sous_chef_south_v1.png" id="20_sous_south"]
+[ext_resource type="Texture2D" uid="uid://bvvjvvxfve6nq" path="res://frontend/assets/runtime/v4/sprites/staff/sous_chef/sous_chef_walk_4x4_v1.png" id="20_sous_walk"]
+[ext_resource type="Texture2D" uid="uid://cte8fswd1oqde" path="res://frontend/assets/runtime/v4/sprites/staff/sous_chef/standing/sous_chef_west_v1.png" id="20_sous_west"]
+[ext_resource type="Texture2D" path="res://frontend/assets/runtime/v4/sprites/staff/expeditor/standing/expeditor_east_v1.png" id="21_expeditor_east"]
+[ext_resource type="Texture2D" path="res://frontend/assets/runtime/v4/sprites/staff/expeditor/standing/expeditor_north_v1.png" id="21_expeditor_north"]
+[ext_resource type="Texture2D" path="res://frontend/assets/runtime/v4/sprites/staff/expeditor/standing/expeditor_south_v1.png" id="21_expeditor_south"]
+[ext_resource type="Texture2D" path="res://frontend/assets/runtime/v4/sprites/staff/expeditor/expeditor_walk_4x4_v1.png" id="21_expeditor_walk"]
+[ext_resource type="Texture2D" path="res://frontend/assets/runtime/v4/sprites/staff/expeditor/standing/expeditor_west_v1.png" id="21_expeditor_west"]
+[ext_resource type="Script" uid="uid://bc5tmxj4p4dgu" path="res://frontend/scripts/directional_walk_sprite.gd" id="22_staff_walk_script"]
+[ext_resource type="Texture2D" path="res://frontend/assets/runtime/v4/sprites/staff/waiter/standing/waiter_east_v1.png" id="22_waiter_east"]
+[ext_resource type="Texture2D" path="res://frontend/assets/runtime/v4/sprites/staff/waiter/standing/waiter_north_v1.png" id="22_waiter_north"]
+[ext_resource type="Texture2D" path="res://frontend/assets/runtime/v4/sprites/staff/waiter/standing/waiter_south_v1.png" id="22_waiter_south"]
+[ext_resource type="Texture2D" path="res://frontend/assets/runtime/v4/sprites/staff/waiter/waiter_walk_4x4_v1.png" id="22_waiter_walk"]
+[ext_resource type="Texture2D" path="res://frontend/assets/runtime/v4/sprites/staff/waiter/standing/waiter_west_v1.png" id="22_waiter_west"]
 [ext_resource type="Texture2D" uid="uid://dgh2ce6v2rcgk" path="res://frontend/assets/runtime/v4/sprites/staff/cashier/cashier_north_v3.png" id="23_cashier"]
 [ext_resource type="Texture2D" uid="uid://bebsx71qsr4pa" path="res://frontend/assets/runtime/v4/environment/architecture-kitchen-doorfree.png" id="24_kitchen_room"]
 [ext_resource type="Texture2D" uid="uid://dgl0ydjnxshfg" path="res://frontend/assets/runtime/v4/environment/architecture-restroom-sealed-roof.png" id="25_restroom_room"]
 [ext_resource type="Texture2D" uid="uid://cuedu0edet08b" path="res://frontend/assets/runtime/v4/environment/architecture-dining-doorfree.png" id="26_dining_room"]
 [ext_resource type="Script" uid="uid://d11j8cjcb4ji7" path="res://frontend/scripts/wc_door.gd" id="29_wc_door_script"]
-[ext_resource type="Script" uid="uid://bv72r7lw5p3n4" path="res://frontend/scripts/swing_door.gd" id="30_swing_door_script"]
 [ext_resource type="Texture2D" uid="uid://l75dfkpkupsb" path="res://frontend/assets/runtime/v4/sprites/furniture/swing_door_closed_v2.png" id="31_swing_door_closed"]
 [ext_resource type="Texture2D" uid="uid://djsk62w37ab81" path="res://frontend/assets/runtime/v4/sprites/furniture/wc_sign_brass_v1.png" id="32_wc_sign"]
 [ext_resource type="Texture2D" uid="uid://8rof0f3fm226" path="res://frontend/assets/runtime/v4/sprites/furniture/clock_platform_roof_v1.png" id="33_clock_platform"]
@@ -36,10 +52,7 @@
 [ext_resource type="Texture2D" uid="uid://comjaq3olyrdc" path="res://frontend/assets/runtime/v4/sprites/characters/hamster_run_16frame_sheet_v2_aligned.png" id="37_hamster_runner"]
 [ext_resource type="Script" uid="uid://e6woligk2ba5" path="res://frontend/scripts/hamster_wheel.gd" id="38_hamster_wheel_script"]
 [ext_resource type="Script" uid="uid://deqliqjvgpwfm" path="res://frontend/scripts/sprite_sheet_animator.gd" id="40_sprite_animator"]
-[ext_resource type="Texture2D" path="res://frontend/assets/runtime/v4/sprites/furniture/office_closed_door_v10.png" id="41_office_door"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_swing_door"]
-size = Vector2(820, 900)
+[ext_resource type="Texture2D" uid="uid://v1edcan7qyg0" path="res://frontend/assets/runtime/v4/sprites/furniture/office_closed_door_v10.png" id="41_office_door"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wc_door"]
 size = Vector2(760, 1250)
@@ -53,7 +66,7 @@ position = Vector2(176.06, 181.61)
 scale = Vector2(0.76555, 0.76555)
 texture = ExtResource("1_office")
 
-[node name="OfficeClosedDoor" type="Sprite2D" parent="Architecture/OfficeRegion"]
+[node name="OfficeClosedDoor" type="Sprite2D" parent="Architecture/OfficeRegion" unique_id=297285721]
 position = Vector2(60.5, 160.5)
 texture = ExtResource("41_office_door")
 
@@ -246,24 +259,48 @@ scale = Vector2(0.26, 0.26)
 texture = ExtResource("18_manager")
 
 [node name="HeadChef" type="Sprite2D" parent="Staff" unique_id=1894238003]
-position = Vector2(555, 176)
+position = Vector2(608, 143)
 scale = Vector2(0.26, 0.26)
-texture = ExtResource("19_head")
+texture = ExtResource("19_head_south")
+script = ExtResource("22_staff_walk_script")
+walk_atlas = ExtResource("19_head_walk")
+south_standing = ExtResource("19_head_south")
+north_standing = ExtResource("19_head_north")
+west_standing = ExtResource("19_head_west")
+east_standing = ExtResource("19_head_east")
 
 [node name="SousChef" type="Sprite2D" parent="Staff" unique_id=1441295889]
-position = Vector2(825, 217)
+position = Vector2(725, 150)
 scale = Vector2(0.26, 0.26)
-texture = ExtResource("20_sous")
+texture = ExtResource("20_sous_south")
+script = ExtResource("22_staff_walk_script")
+walk_atlas = ExtResource("20_sous_walk")
+south_standing = ExtResource("20_sous_south")
+north_standing = ExtResource("20_sous_north")
+west_standing = ExtResource("20_sous_west")
+east_standing = ExtResource("20_sous_east")
 
 [node name="Expeditor" type="Sprite2D" parent="Staff" unique_id=2112638946]
-position = Vector2(295, 418)
+position = Vector2(357, 341)
 scale = Vector2(0.25, 0.25)
-texture = ExtResource("21_expeditor")
+texture = ExtResource("21_expeditor_south")
+script = ExtResource("22_staff_walk_script")
+walk_atlas = ExtResource("21_expeditor_walk")
+south_standing = ExtResource("21_expeditor_south")
+north_standing = ExtResource("21_expeditor_north")
+west_standing = ExtResource("21_expeditor_west")
+east_standing = ExtResource("21_expeditor_east")
 
 [node name="Waiter" type="Sprite2D" parent="Staff" unique_id=1144216472]
-position = Vector2(411, 417)
+position = Vector2(993, 336)
 scale = Vector2(0.26, 0.26)
-texture = ExtResource("22_waiter")
+texture = ExtResource("22_waiter_south")
+script = ExtResource("22_staff_walk_script")
+walk_atlas = ExtResource("22_waiter_walk")
+south_standing = ExtResource("22_waiter_south")
+north_standing = ExtResource("22_waiter_north")
+west_standing = ExtResource("22_waiter_west")
+east_standing = ExtResource("22_waiter_east")
 
 [node name="Cashier" type="Sprite2D" parent="Staff" unique_id=773703173]
 position = Vector2(337, 561)

@@ -38,8 +38,8 @@ func _init() -> void:
 	}, context)
 	var knowledge_id: String = knowledge["body"]["data"]["id"]
 	api.request("POST", "/api/v2/knowledge/%s/documents" % knowledge_id, {
-		"title": "Harness V2",
-		"content": "Harness V2 是一个轻量 Agent 运行平台。",
+		"title": "Harness Kitchen",
+		"content": "Harness Kitchen 是一个轻量 Agent 运行平台。",
 	}, context)
 	var search = api.request("GET", "/api/v2/knowledge/search", {"query": "Agent"}, context)
 	_expect(search["body"]["data"].size() == 1, "知识检索失败")
@@ -72,7 +72,7 @@ func _init() -> void:
 	_expect(saved["status"] == 200, "假数据库保存失败")
 
 	if failures.is_empty():
-		print("Harness V2 lightweight backend test: PASS")
+		print("Harness Kitchen lightweight backend test: PASS")
 		quit(0)
 	else:
 		for failure in failures:

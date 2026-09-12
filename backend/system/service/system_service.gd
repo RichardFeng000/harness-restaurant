@@ -18,7 +18,7 @@ func health() -> Dictionary:
 
 func info() -> Dictionary:
 	return _ok({
-		"name": "Harness V2",
+		"name": "Harness Kitchen",
 		"version": VERSION,
 		"environment": "local",
 		"features": ["tenant", "chat", "knowledge", "memory", "run"],
@@ -35,4 +35,3 @@ func _ok(data: Variant, status: int = 200) -> Dictionary:
 
 func _error(code: String, message: String, status: int) -> Dictionary:
 	return {"ok": false, "status": status, "error": {"code": code, "message": message}}
-

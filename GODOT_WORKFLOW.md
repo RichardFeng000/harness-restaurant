@@ -3,13 +3,13 @@
 本项目的 Godot 工程目录：
 
 ```text
-/Users/fengruiding/Downloads/harness-visual-factory
+/Users/fengruiding/Downloads/harness-kitchen
 ```
 
 项目配置：
 
 ```text
-/Users/fengruiding/Downloads/harness-visual-factory/project.godot
+/Users/fengruiding/Downloads/harness-kitchen/project.godot
 ```
 
 ## 可靠的重启方法
@@ -25,13 +25,13 @@ pkill -TERM -f /Applications/Godot.app/Contents/MacOS/Godot
 ```bash
 open -n -a Godot --args \
   --editor \
-  --path /Users/fengruiding/Downloads/harness-visual-factory
+  --path /Users/fengruiding/Downloads/harness-kitchen
 ```
 
 成功后窗口标题应为：
 
 ```text
-restaurant_v4.tscn - Harness V2 - Godot Engine
+restaurant_v4.tscn - Harness Kitchen - Godot Engine
 ```
 
 不要只打开 Godot Project Manager；项目管理器中可能没有登记本项目。
@@ -77,11 +77,10 @@ res://frontend/assets/runtime/v4/sprites/staff/cashier/cashier_north_v3.png
 /Applications/Godot.app/Contents/MacOS/Godot \
   --headless \
   --editor \
-  --path /Users/fengruiding/Downloads/harness-visual-factory \
+  --path /Users/fengruiding/Downloads/harness-kitchen \
   --quit \
   --log-file /tmp/harness-godot-check.log
 ```
 
 返回码为 `0` 表示项目资源和脚本可以加载。沙盒环境中出现无法保存
 Godot 全局编辑器设置的提示，不代表项目场景错误。
-

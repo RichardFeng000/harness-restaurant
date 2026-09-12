@@ -21,7 +21,7 @@ func bootstrap() -> Dictionary:
 	var project: Dictionary = repository.create_project({
 		"tenant_id": tenant["id"],
 		"name": "Default Project",
-		"description": "Harness V2 默认项目",
+		"description": "Harness Kitchen 默认项目",
 	})
 	var agent: Dictionary = repository.create_agent({
 		"tenant_id": tenant["id"],

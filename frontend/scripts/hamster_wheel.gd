@@ -1,7 +1,7 @@
 extends Sprite2D
 
 @export var frames_per_second := 12.0
-@export var running := true
+@export var running := false
 
 var frame_clock := 0.0
 
@@ -20,7 +20,10 @@ func _process(delta: float) -> void:
 		frame = (frame + 1) % 16
 
 func start() -> void:
+	frame_clock = 0.0
 	running = true
 
 func stop() -> void:
 	running = false
+	frame_clock = 0.0
+	frame = 0

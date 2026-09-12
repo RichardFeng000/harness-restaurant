@@ -1,4 +1,4 @@
-name: Deploy Harness V2 to GitHub Pages
+name: Deploy Harness Kitchen to GitHub Pages
 
 on:
   push:
@@ -35,4 +35,3 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
-

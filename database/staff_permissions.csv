@@ -1,0 +1,8 @@
+staff_id,display_name,role_code,can_chat,can_portal,can_knowledge,can_memory,can_mcp
+manager,主管,ADMIN,true,true,true,true,true
+cashier,收银员,STAFF,true,false,false,true,true
+head_chef,主厨,STAFF,true,false,true,true,true
+sous_chef,副厨,STAFF,true,false,true,true,true
+expeditor,传菜员,STAFF,true,false,false,true,true
+waiter,服务员,STAFF,true,false,true,true,true
+hamster,仓鼠,STAFF,true,false,false,true,true

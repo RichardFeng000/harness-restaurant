@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://frontend/ui/book_empty_page.gd" id="1"]
+
+[node name="KnowledgePage" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+page_title = "知识库"
+page_description = "把餐厅的菜谱、文档与操作指引放在一起。"
+empty_description = "资料整理与检索尚未开放。"
+monogram = "知"

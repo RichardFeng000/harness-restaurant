@@ -2,6 +2,7 @@ class_name HarnessApi
 extends RefCounted
 
 const DatabaseScript = preload("res://database/fake_db.gd")
+const StaffSkillRuntime = preload("res://backend/skills/staff_skill_runtime.gd")
 
 const TenantRepository = preload("res://backend/tenant/repository/tenant_repository.gd")
 const TenantService = preload("res://backend/tenant/service/tenant_service.gd")
@@ -34,8 +35,10 @@ var knowledge
 var memory
 var run
 var system
+var skills
 
 func _init(db_path: String = "user://harness_v2.csv", auto_load: bool = true) -> void:
+	skills = StaffSkillRuntime.new()
 	database = DatabaseScript.new(db_path)
 	if auto_load:
 		database.load()

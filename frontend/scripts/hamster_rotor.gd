@@ -1,7 +1,7 @@
 extends Node2D
 
 @export var rotation_speed := 1.8
-@export var running := true
+@export var running := false
 @export var radius := 82.0
 
 const BRASS_DARK := Color("#8f541d")
@@ -30,4 +30,3 @@ func start() -> void:
 
 func stop() -> void:
 	running = false
-

@@ -1,0 +1,12 @@
+{
+  "id": "local-time",
+  "name": "本地时间",
+  "version": "1.0.0",
+  "kind": "skill",
+  "description": "读取当前设备的日期、时间和时区，由仓鼠每秒校准餐厅墙钟。",
+  "instructions": "res://game/skills/local-time/SKILL.md",
+  "entrypoint": "res://game/skills/local-time/scripts/read_local_time.gd",
+  "eligible_staff": ["hamster"],
+  "default_installed": ["hamster"],
+  "permissions": ["device.time.read"]
+}

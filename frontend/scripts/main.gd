@@ -1,308 +1,347 @@
 extends Control
+## Coordinates views, workspace access and the restaurant session.
 
 const HarnessApi = preload("res://backend/harness_api.gd")
 const LayeredRestaurant = preload("res://frontend/scenes/restaurant_v4.tscn")
+const HarnessBookSystem = preload("res://frontend/scenes/harness_book_system.tscn")
+const UI = preload("res://frontend/ui/kitchen_theme.gd")
+const MainMenu = preload("res://frontend/ui/main_menu.gd")
+const SettingsPanel = preload("res://frontend/ui/settings_panel.gd")
+const GameHud = preload("res://frontend/ui/game_hud.gd")
+const PauseMenu = preload("res://frontend/ui/pause_menu.gd")
+const WorkspaceStore = preload("res://frontend/state/workspace_store.gd")
+const HamsterTimekeeper = preload("res://frontend/world/hamster_timekeeper.gd")
+const MODEL_CONFIG_FILENAME := "harness_config.json"
 
-const COLOR_BG := Color("#08101f")
-const COLOR_PANEL := Color("#101b2f")
-const COLOR_PANEL_LIGHT := Color("#17243b")
-const COLOR_CYAN := Color("#58e6d9")
-const COLOR_BLUE := Color("#5a8cff")
-const COLOR_TEXT := Color("#e9f1ff")
-const COLOR_MUTED := Color("#8290aa")
-const COLOR_GREEN := Color("#62e59c")
-const COLOR_ORANGE := Color("#ffb45c")
-const MENU_WOOD := Color("#2a160f")
-const MENU_WOOD_LIGHT := Color("#44251a")
-const MENU_CREAM := Color("#fff1d2")
-const MENU_GOLD := Color("#e7ad55")
-const MENU_RED := Color("#c94f38")
-const WORKSPACE_CONFIG_PATH := "user://workspace.json"
-const SAVE_PATH := "user://restaurant_save.json"
-
+var store = WorkspaceStore.new()
 var api
 var folder_callback
+var config_write_callback
+var config_read_callback
 var selected_folder := ""
 var folder_selection_mode := "open"
-var game_time := 0.0
-var active_run := false
-var run_progress := 0.0
 var task_count := 3
 var energy := 84
 var game_started := false
-
-var menu_layer: Control
+var demo_mode := false
+var workspace_session_key := ""
+var menu_layer
 var game_layer: Control
-var pause_layer: Control
-var folder_label: Label
-var activity_log: RichTextLabel
-var progress_bar: ProgressBar
-var run_button: Button
+var pause_layer
+var settings_layer
+var hud
+var harness_layer: Control
+var restaurant_scene: Node
+var timekeeper: Node
 var file_dialog: FileDialog
+var folder_label: Label
+var model_input: LineEdit
+var base_url_input: LineEdit
+var api_key_input: LineEdit
+var settings_status: Label
+
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	theme = UI.create()
+	get_window().min_size = Vector2i(960, 540)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	api = HarnessApi.new()
+	if api == null:
+		api = HarnessApi.new()
 	api.request("POST", "/api/v2/bootstrap")
-	resized.connect(queue_redraw)
 	_build_menu()
 	_build_game()
+	_build_harness_layer()
+	_build_settings()
 	_build_file_dialog()
 	_load_workspace_preference()
+	menu_layer.set_can_continue(not store.load_progress().is_empty())
 	game_layer.hide()
-	queue_redraw()
-
-func _process(delta: float) -> void:
-	game_time += delta
-	if active_run:
-		run_progress = minf(run_progress + delta * 18.0, 100.0)
-		progress_bar.value = run_progress
-		if run_progress >= 100.0:
-			_finish_agent_run()
-	queue_redraw()
-
-func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), COLOR_BG)
-	var spacing := 54.0
-	var drift := fmod(game_time * 8.0, spacing)
-	for x in range(-1, int(size.x / spacing) + 2):
-		var px := x * spacing + drift
-		draw_line(Vector2(px, 0), Vector2(px, size.y), Color(0.18, 0.34, 0.55, 0.10), 1.0)
-	for y in range(-1, int(size.y / spacing) + 2):
-		var py := y * spacing + drift * 0.35
-		draw_line(Vector2(0, py), Vector2(size.x, py), Color(0.18, 0.34, 0.55, 0.10), 1.0)
-	for index in range(12):
-		var px := fmod(index * 173.0 + game_time * (7.0 + index), size.x + 80.0) - 40.0
-		var py := fmod(index * 97.0 + sin(game_time * 0.6 + index) * 30.0, size.y)
-		draw_circle(Vector2(px, py), 2.5, Color(COLOR_CYAN, 0.38))
+	restaurant_scene.process_mode = Node.PROCESS_MODE_DISABLED
 
 func _build_menu() -> void:
-	menu_layer = Control.new()
-	menu_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	menu_layer = MainMenu.new()
 	add_child(menu_layer)
-
-	var kitchen_background := TextureRect.new()
-	kitchen_background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	kitchen_background.texture = load("res://frontend/assets/runtime/legacy/environment/restaurant-final-2_5d.png")
-	kitchen_background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	kitchen_background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	kitchen_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	menu_layer.add_child(kitchen_background)
-
-	var kitchen_shade := ColorRect.new()
-	kitchen_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	kitchen_shade.color = Color(0.08, 0.035, 0.02, 0.72)
-	kitchen_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	menu_layer.add_child(kitchen_shade)
-
-	var top_bar := ColorRect.new()
-	top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top_bar.offset_bottom = 86
-	top_bar.color = Color(0.10, 0.045, 0.025, 0.92)
-	top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	menu_layer.add_child(top_bar)
-
-	var top := HBoxContainer.new()
-	top.position = Vector2(44, 34)
-	top.size = Vector2(size.x - 88, 48)
-	top.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top.offset_left = 44
-	top.offset_right = -44
-	menu_layer.add_child(top)
-
-	var brand := Label.new()
-	brand.text = "HARNESS  /  餐厅厨房"
-	brand.add_theme_font_size_override("font_size", 21)
-	brand.add_theme_color_override("font_color", MENU_GOLD)
-	top.add_child(brand)
-	top.add_spacer(false)
-	var build := Label.new()
-	build.text = "今日营业  ·  本地厨房  ·  BUILD 0.1"
-	build.add_theme_font_size_override("font_size", 12)
-	build.add_theme_color_override("font_color", MENU_CREAM.darkened(0.25))
-	top.add_child(build)
-
-	var center := VBoxContainer.new()
-	center.set_anchors_preset(Control.PRESET_CENTER)
-	center.position = Vector2(-310, -270)
-	center.size = Vector2(620, 540)
-	center.add_theme_constant_override("separation", 18)
-	menu_layer.add_child(center)
-
-	var eyebrow := Label.new()
-	eyebrow.text = "今日厨房  ·  KITCHEN SERVICE"
-	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	eyebrow.add_theme_font_size_override("font_size", 13)
-	eyebrow.add_theme_color_override("font_color", MENU_GOLD)
-	center.add_child(eyebrow)
-
-	var title := Label.new()
-	title.text = "HARNESS 餐厅"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 46)
-	title.add_theme_color_override("font_color", MENU_CREAM)
-	center.add_child(title)
-
-	var subtitle := Label.new()
-	subtitle.text = "准备食材，安排厨师，招待今天的客人"
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_size_override("font_size", 17)
-	subtitle.add_theme_color_override("font_color", MENU_CREAM.darkened(0.18))
-	center.add_child(subtitle)
-
-	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(620, 290)
-	card.add_theme_stylebox_override("panel", _panel_style(Color(MENU_WOOD, 0.96), 18, Color(MENU_GOLD, 0.85)))
-	center.add_child(card)
-	var card_content := VBoxContainer.new()
-	card_content.add_theme_constant_override("separation", 13)
-	card_content.set("theme_override_constants/margin_left", 20)
-	card.add_child(card_content)
-
-	var card_title := Label.new()
-	card_title.text = "厨房菜单  /  MAIN MENU"
-	card_title.add_theme_font_size_override("font_size", 13)
-	card_title.add_theme_color_override("font_color", MENU_GOLD)
-	card_content.add_child(card_title)
-
-	folder_label = Label.new()
-	folder_label.text = "尚未选择餐厅档案"
-	folder_label.add_theme_font_size_override("font_size", 18)
-	folder_label.add_theme_color_override("font_color", MENU_CREAM)
-	card_content.add_child(folder_label)
-
-	var new_game := _button("新游戏", MENU_RED, MENU_CREAM)
-	new_game.custom_minimum_size = Vector2(0, 48)
-	new_game.pressed.connect(_new_game)
-	card_content.add_child(new_game)
-
-	var continue_game := _button("继续游戏", MENU_WOOD_LIGHT, MENU_CREAM)
-	continue_game.custom_minimum_size = Vector2(0, 46)
-	continue_game.pressed.connect(_continue_game)
-	card_content.add_child(continue_game)
-
-	var choose := _button("本地位置", MENU_WOOD_LIGHT, MENU_CREAM)
-	choose.custom_minimum_size = Vector2(0, 46)
-	choose.pressed.connect(_choose_local_folder)
-	card_content.add_child(choose)
-
-	var settings := _button("设置", MENU_WOOD_LIGHT, MENU_CREAM)
-	settings.custom_minimum_size = Vector2(0, 46)
-	settings.pressed.connect(_show_settings_status)
-	card_content.add_child(settings)
-
-	var hint := Label.new()
-	hint.text = "餐厅档案仅保存在本机，不会上传。"
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.add_theme_font_size_override("font_size", 12)
-	hint.add_theme_color_override("font_color", MENU_CREAM.darkened(0.30))
-	center.add_child(hint)
+	folder_label = menu_layer.folder_label
+	menu_layer.new_requested.connect(_new_game)
+	menu_layer.continue_requested.connect(_continue_game)
+	menu_layer.folder_requested.connect(_choose_local_folder)
+	menu_layer.settings_requested.connect(_show_settings_status)
+	menu_layer.demo_requested.connect(_open_demo)
 
 func _build_game() -> void:
 	game_layer = Control.new()
-	game_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	game_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	game_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	game_layer.clip_contents = true
 	add_child(game_layer)
-
-	var restaurant := LayeredRestaurant.instantiate()
-	restaurant.name = "RestaurantScene"
-	game_layer.add_child(restaurant)
-
-	var pause_button := _button("Ⅱ", Color(0.05, 0.09, 0.15, 0.88), COLOR_TEXT)
-	pause_button.z_index = 100
-	pause_button.position = Vector2(24, 22)
-	pause_button.size = Vector2(52, 48)
-	pause_button.add_theme_font_size_override("font_size", 22)
-	pause_button.pressed.connect(_pause_game)
-	game_layer.add_child(pause_button)
-
-	run_button = _button("开始烹饪", MENU_RED, MENU_CREAM)
-	run_button.z_index = 100
-	run_button.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	run_button.offset_left = 470
-	run_button.offset_right = -470
-	run_button.offset_top = -94
-	run_button.offset_bottom = -36
-	run_button.add_theme_font_size_override("font_size", 18)
-	run_button.add_theme_color_override("font_color", MENU_CREAM)
-	run_button.add_theme_color_override("font_hover_color", Color.WHITE)
-	run_button.add_theme_color_override("font_pressed_color", MENU_CREAM)
-	run_button.add_theme_stylebox_override("normal", _cook_button_style(MENU_RED, MENU_GOLD, 7))
-	run_button.add_theme_stylebox_override("hover", _cook_button_style(MENU_RED.lightened(0.08), MENU_CREAM, 10))
-	run_button.add_theme_stylebox_override("pressed", _cook_button_style(MENU_RED.darkened(0.12), MENU_GOLD.darkened(0.12), 3))
-	run_button.pressed.connect(_start_agent_run)
-	game_layer.add_child(run_button)
-
-	progress_bar = ProgressBar.new()
-	progress_bar.z_index = 100
-	progress_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	progress_bar.offset_left = 400
-	progress_bar.offset_right = -400
-	progress_bar.offset_top = -20
-	progress_bar.offset_bottom = -12
-	progress_bar.max_value = 100
-	progress_bar.value = 0
-	progress_bar.show_percentage = false
-	game_layer.add_child(progress_bar)
-
-	activity_log = RichTextLabel.new()
-	activity_log.bbcode_enabled = true
-	activity_log.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	activity_log.position = Vector2(88, 25)
-	activity_log.size = Vector2(360, 54)
-	activity_log.add_theme_font_size_override("normal_font_size", 12)
-	activity_log.text = "[color=#58e6d9]厨房准备完毕[/color]\n厨师等待第一份订单"
-	game_layer.add_child(activity_log)
-	activity_log.hide()
-
-	_build_pause_layer()
-
-func _build_pause_layer() -> void:
-	pause_layer = Control.new()
-	pause_layer.z_index = 200
-	pause_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	restaurant_scene = LayeredRestaurant.instantiate()
+	restaurant_scene.name = "RestaurantScene"
+	restaurant_scene.process_mode = Node.PROCESS_MODE_PAUSABLE
+	game_layer.add_child(restaurant_scene)
+	timekeeper = HamsterTimekeeper.new()
+	add_child(timekeeper)
+	timekeeper.bind(api.skills, restaurant_scene.get_node("Furniture/HamsterClock"))
+	timekeeper.working_changed.connect(_timekeeper_working_changed)
+	hud = GameHud.new()
+	game_layer.add_child(hud)
+	hud.pause_requested.connect(_pause_game)
+	hud.start_requested.connect(_start_agent_run)
+	hud.book_requested.connect(_open_harness)
+	pause_layer = PauseMenu.new()
 	game_layer.add_child(pause_layer)
+	pause_layer.resume_requested.connect(_resume_game)
+	pause_layer.save_requested.connect(_save_progress)
+	pause_layer.menu_requested.connect(_back_to_menu)
 
-	var shade := ColorRect.new()
-	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	shade.color = Color(0.02, 0.03, 0.05, 0.72)
-	pause_layer.add_child(shade)
+func _build_settings() -> void:
+	settings_layer = SettingsPanel.new()
+	add_child(settings_layer)
+	settings_layer.close_requested.connect(_close_settings)
+	settings_layer.save_requested.connect(_save_model_config)
+	model_input = settings_layer.model_input
+	base_url_input = settings_layer.base_url_input
+	api_key_input = settings_layer.api_key_input
+	settings_status = settings_layer.status
 
-	var card := PanelContainer.new()
-	card.set_anchors_preset(Control.PRESET_CENTER)
-	card.position = Vector2(-190, -178)
-	card.size = Vector2(380, 356)
-	card.add_theme_stylebox_override("panel", _panel_style(Color("#101b2f"), 18, Color(COLOR_CYAN, 0.55)))
-	pause_layer.add_child(card)
+func _folder_selected(folder: String) -> void:
+	if folder.is_empty():
+		return
+	var selection_mode := folder_selection_mode
+	folder_selection_mode = "open"
+	selected_folder = folder
+	_save_workspace_preference()
+	if selection_mode == "settings":
+		_show_settings_panel()
+		return
+	if selection_mode == "continue":
+		if not store.replace_saved_workspace(selected_folder):
+			folder_label.text = "无法更新存档位置，请检查本地存储权限"
+			return
+		_continue_game()
+		return
+	_reset_session()
+	if selection_mode == "new_game" and not _write_progress_file():
+		folder_label.text = "无法保存餐厅档案，请检查本地存储权限"
+		return
+	_open_workspace(selected_folder)
 
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 16)
-	card.add_child(box)
-
-	var title := Label.new()
-	title.text = "游戏暂停"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 30)
-	title.add_theme_color_override("font_color", COLOR_TEXT)
-	box.add_child(title)
-
-	var save_button := _button("保存进度", COLOR_CYAN, Color("#071719"))
-	save_button.custom_minimum_size.y = 52
-	save_button.pressed.connect(_save_progress)
-	box.add_child(save_button)
-
-	var menu_button := _button("返回菜单", COLOR_PANEL_LIGHT, COLOR_TEXT)
-	menu_button.custom_minimum_size.y = 52
-	menu_button.pressed.connect(_back_to_menu)
-	box.add_child(menu_button)
-
-	var resume_button := _button("返回游戏", COLOR_PANEL_LIGHT, COLOR_TEXT)
-	resume_button.custom_minimum_size.y = 52
-	resume_button.pressed.connect(_resume_game)
-	box.add_child(resume_button)
-
+func _open_workspace(folder: String) -> void:
+	var session_key := "__demo__" if demo_mode else folder
+	if workspace_session_key != session_key:
+		harness_layer.reset_session()
+	workspace_session_key = session_key
+	selected_folder = folder
+	var display_name := "演示餐厅" if demo_mode else _workspace_display_name(folder)
+	folder_label.text = display_name
+	folder_label.tooltip_text = folder
+	folder_label.add_theme_color_override("font_color", UI.INK)
+	menu_layer.hide()
+	game_layer.show()
 	pause_layer.hide()
+	harness_layer.hide()
+	get_tree().paused = false
+	restaurant_scene.process_mode = Node.PROCESS_MODE_PAUSABLE
+	hud.update_state(display_name, game_started, demo_mode)
+	_set_hamster_running(game_started)
+	timekeeper.set_active(true)
+
+func _reset_session() -> void:
+	timekeeper.set_active(false)
+	api.skills.restore_state(null)
+	harness_layer.reset_session()
+	game_started = false
+	demo_mode = false
+	task_count = 3
+	energy = 84
+	_set_hamster_running(false)
+
+func _open_demo() -> void:
+	_reset_session()
+	demo_mode = true
+	_open_workspace("")
+
+func _new_game() -> void:
+	folder_selection_mode = "new_game"
+	folder_label.text = "选择一个文件夹，创建新的餐厅档案"
+	_select_folder()
+
+func _back_to_menu() -> void:
+	timekeeper.set_active(false)
+	get_tree().paused = false
+	pause_layer.hide()
+	harness_layer.hide()
+	game_layer.hide()
+	restaurant_scene.process_mode = Node.PROCESS_MODE_DISABLED
+	menu_layer.show()
+	_load_workspace_preference()
+	menu_layer.set_can_continue(not store.load_progress().is_empty())
+
+func _continue_game() -> void:
+	var saved_data: Dictionary = store.load_progress()
+	if saved_data.is_empty():
+		folder_label.text = "尚无存档，请创建餐厅或体验演示"
+		return
+	selected_folder = str(saved_data.get("restaurant", selected_folder))
+	if not _workspace_is_available(selected_folder):
+		folder_selection_mode = "continue"
+		folder_label.text = "请重新选择存档对应的本地文件夹"
+		_select_folder()
+		return
+	demo_mode = false
+	timekeeper.set_active(false)
+	api.skills.restore_state(saved_data.get("staff_skills"))
+	api.skills.restore_mcp_state(saved_data.get("mcp_servers"))
+	api.skills.restore_permission_state(saved_data.get("staff_tool_permissions"))
+	task_count = int(saved_data.get("task_count", 3))
+	energy = int(saved_data.get("energy", 84))
+	game_started = bool(saved_data.get("game_started", true))
+	_open_workspace(selected_folder)
+
+func _show_settings_panel() -> void:
+	model_input.clear()
+	base_url_input.clear()
+	api_key_input.clear()
+	settings_status.text = "保存到：%s / %s" % [_workspace_display_name(selected_folder), MODEL_CONFIG_FILENAME]
+	settings_status.add_theme_color_override("font_color", UI.MUTED)
+	settings_layer.set_loading(OS.has_feature("web"))
+	if OS.has_feature("web"):
+		settings_status.text = "正在读取餐厅配置…"
+		_read_model_config_web()
+	else:
+		_fill_model_config(store.load_model_config(selected_folder))
+	settings_layer.show()
+	settings_layer.move_to_front()
+	model_input.grab_focus()
+
+func _fill_model_config(config: Dictionary) -> void:
+	model_input.text = str(config.get("model", ""))
+	base_url_input.text = str(config.get("base_url", ""))
+	api_key_input.text = str(config.get("api_key", ""))
+
+func _read_model_config_web() -> void:
+	config_read_callback = JavaScriptBridge.create_callback(_model_config_read_from_web)
+	var window = JavaScriptBridge.get_interface("window")
+	window.harnessConfigRead = config_read_callback
+	JavaScriptBridge.eval("""
+		(async () => {
+			try {
+				const handle = window.harnessWorkspaceHandle;
+				const file = await (await handle.getFileHandle("harness_config.json")).getFile();
+				window.harnessConfigRead(await file.text());
+			} catch (error) { window.harnessConfigRead("{}"); }
+		})();
+	""", true)
+
+func _model_config_read_from_web(arguments: Array) -> void:
+	if arguments.is_empty() or not settings_layer.visible:
+		return
+	settings_layer.set_loading(false)
+	settings_status.text = "保存到：%s / %s" % [_workspace_display_name(selected_folder), MODEL_CONFIG_FILENAME]
+	var parsed = JSON.parse_string(str(arguments[0]))
+	if parsed is Dictionary:
+		_fill_model_config(parsed)
+
+func _start_agent_run() -> void:
+	game_started = true
+	_set_hamster_running(true)
+	hud.update_state("演示餐厅" if demo_mode else _workspace_display_name(selected_folder), true, demo_mode)
+
+func _open_harness() -> void:
+	if not game_started:
+		return
+	harness_layer.open(hud.book_button.get_global_rect())
+
+func _close_harness() -> void:
+	harness_layer.close(hud.book_button.get_global_rect())
+
+func _on_harness_closed() -> void:
+	hud.book_button.grab_focus()
+
+func _pause_game() -> void:
+	get_tree().paused = true
+	pause_layer.save_button.disabled = demo_mode
+	pause_layer.status.text = "演示体验不保存进度" if demo_mode else "Esc 继续营业 · 进度需要手动保存"
+	pause_layer.status.add_theme_color_override("font_color", UI.MUTED)
+	pause_layer.show()
+
+func _resume_game() -> void:
+	get_tree().paused = false
+	pause_layer.hide()
+	timekeeper.sync_now()
+
+func _save_progress() -> void:
+	if demo_mode:
+		pause_layer.status.text = "演示体验不保存进度"
+		return
+	if not _write_progress_file():
+		pause_layer.status.text = "保存失败，请检查本地存储权限后重试"
+		pause_layer.status.add_theme_color_override("font_color", UI.ACCENT)
+		return
+	_save_workspace_preference()
+	pause_layer.status.text = "进度已保存 · 可以安心休息了"
+	pause_layer.status.add_theme_color_override("font_color", UI.GREEN)
+
+func _write_progress_file() -> bool:
+	return store.save_progress({
+		"restaurant": selected_folder,
+		"task_count": task_count,
+		"energy": energy,
+		"game_started": game_started,
+		"staff_skills": api.skills.export_state(),
+		"mcp_servers": api.skills.export_mcp_state(),
+		"staff_tool_permissions": api.skills.export_permission_state(),
+	})
+
+func _save_workspace_preference() -> void:
+	if not selected_folder.is_empty():
+		store.save_preference(selected_folder)
+
+func _load_workspace_preference() -> void:
+	var saved_folder: String = store.load_preference()
+	if saved_folder.is_empty():
+		return
+	selected_folder = saved_folder
+	folder_label.text = _workspace_display_name(saved_folder)
+	folder_label.tooltip_text = saved_folder
+	folder_label.add_theme_color_override("font_color", UI.INK)
+
+func _workspace_is_available(folder: String) -> bool:
+	if folder.is_empty():
+		return false
+	if OS.has_feature("web"):
+		return str(JavaScriptBridge.eval("window.harnessWorkspaceHandle ? window.harnessWorkspaceHandle.name : null", true)) == folder
+	return DirAccess.dir_exists_absolute(folder)
+
+func _input(event: InputEvent) -> void:
+	if not event.is_action_pressed("pause_game") or event.is_echo():
+		return
+	if file_dialog.visible:
+		return
+	if settings_layer.visible:
+		_close_settings()
+	elif harness_layer.visible:
+		if not harness_layer.dismiss_active_panel():
+			_close_harness()
+	elif game_layer.visible:
+		if pause_layer.visible:
+			_resume_game()
+		else:
+			_pause_game()
+	else:
+		return
+	get_viewport().set_input_as_handled()
+
+func _build_harness_layer() -> void:
+	harness_layer = HarnessBookSystem.instantiate()
+	harness_layer.connect("closed", _on_harness_closed)
+	add_child(harness_layer)
+	harness_layer.set_skill_runtime(api.skills)
+	harness_layer.visibility_changed.connect(func():
+		# The cover is lifted into the animation, leaving no duplicate in the HUD.
+		hud.book_button.modulate.a = 0.0 if harness_layer.visible else 1.0
+	)
+	harness_layer.hide()
 
 func _build_file_dialog() -> void:
 	file_dialog = FileDialog.new()
@@ -311,6 +350,7 @@ func _build_file_dialog() -> void:
 	file_dialog.title = "选择本地餐厅档案"
 	file_dialog.dir_selected.connect(_folder_selected)
 	add_child(file_dialog)
+	file_dialog.canceled.connect(_folder_selection_canceled)
 
 func _choose_local_folder() -> void:
 	folder_selection_mode = "open"
@@ -330,16 +370,14 @@ func _select_folder_web() -> void:
 		(async () => {
 			try {
 				if (!window.showDirectoryPicker) {
-					window.harnessFolderPicked(["__unsupported__"]);
+					window.harnessFolderPicked("__unsupported__");
 					return;
 				}
 				const handle = await window.showDirectoryPicker({mode: "readwrite"});
 				window.harnessWorkspaceHandle = handle;
-				window.harnessFolderPicked([handle.name]);
+				window.harnessFolderPicked(handle.name);
 			} catch (error) {
-				if (error.name !== "AbortError") {
-					window.harnessFolderPicked(["__error__"]);
-				}
+				window.harnessFolderPicked(error.name === "AbortError" ? "__cancelled__" : "__error__");
 			}
 		})();
 	""", true)
@@ -348,168 +386,109 @@ func _folder_picked_from_web(arguments: Array) -> void:
 	if arguments.is_empty():
 		return
 	var value := str(arguments[0])
-	if value == "__unsupported__":
-		folder_label.text = "Folder API unavailable — use Chrome or Edge"
-		folder_label.add_theme_color_override("font_color", COLOR_ORANGE)
+	if value == "__cancelled__":
+		_folder_selection_canceled()
+	elif value == "__unsupported__":
+		folder_label.text = "此浏览器不支持选择文件夹，可先体验演示餐厅"
+		folder_label.add_theme_color_override("font_color", UI.ACCENT)
 	elif value == "__error__":
-		folder_label.text = "Could not open folder"
-		folder_label.add_theme_color_override("font_color", Color("#ff718c"))
+		folder_label.text = "无法打开文件夹，请重试"
+		folder_label.add_theme_color_override("font_color", UI.ACCENT)
 	else:
 		_folder_selected(value)
 
-func _folder_selected(folder: String) -> void:
-	if folder.is_empty():
-		return
-	var selection_mode := folder_selection_mode
-	folder_selection_mode = "open"
-	selected_folder = folder
-	_save_workspace_preference()
-	if selection_mode == "continue":
-		_replace_saved_workspace(selected_folder)
-		_continue_game()
-		return
-	if selection_mode == "new_game":
-		_write_progress_file()
-	_open_workspace(selected_folder)
-
-func _open_workspace(folder: String) -> void:
-	selected_folder = folder if not folder.is_empty() else "Harness Restaurant"
-	var display_name := _workspace_display_name(selected_folder)
-	folder_label.text = display_name
-	folder_label.add_theme_color_override("font_color", MENU_CREAM)
-	menu_layer.hide()
-	game_layer.show()
-	pause_layer.hide()
-	run_button.visible = not game_started
-	progress_bar.visible = not game_started
-	activity_log.text = "[color=#58e6d9]%s[/color]\n餐厅已开门，厨房准备完成" % display_name
-
-func _new_game() -> void:
-	game_started = false
-	task_count = 3
-	energy = 84
-	run_button.text = "开始烹饪"
-	run_button.disabled = false
-	progress_bar.value = 0
-	folder_selection_mode = "new_game"
-	folder_label.text = "新游戏需要先选择本地餐厅文件夹"
-	folder_label.add_theme_color_override("font_color", MENU_GOLD)
-	_select_folder()
-
-func _back_to_menu() -> void:
-	pause_layer.hide()
-	game_layer.hide()
-	menu_layer.show()
-	active_run = false
-	run_button.disabled = false
-
-func _continue_game() -> void:
-	var saved_data: Dictionary = {}
-	if FileAccess.file_exists(SAVE_PATH):
-		var save_file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-		if save_file != null:
-			var parsed = JSON.parse_string(save_file.get_as_text())
-			if parsed is Dictionary:
-				saved_data = parsed
-				selected_folder = str(saved_data.get("restaurant", selected_folder))
-
-	if not _workspace_is_available(selected_folder):
-		folder_selection_mode = "continue"
-		folder_label.text = "请先选择本地餐厅文件夹"
-		folder_label.add_theme_color_override("font_color", MENU_GOLD)
+func _show_settings_status() -> void:
+	if selected_folder.is_empty() or not _workspace_is_available(selected_folder):
+		folder_selection_mode = "settings"
+		folder_label.text = "设置前请选择本地餐厅文件夹"
+		folder_label.add_theme_color_override("font_color", UI.MUTED)
 		_select_folder()
 		return
+	_show_settings_panel()
 
-	if not saved_data.is_empty():
-		task_count = int(saved_data.get("task_count", 3))
-		energy = int(saved_data.get("energy", 84))
-		game_started = bool(saved_data.get("game_started", true))
-	_open_workspace(selected_folder)
-	if game_started:
-		run_button.hide()
-		progress_bar.hide()
-		activity_log.text = "[color=#62e59c]进度已恢复[/color]\n欢迎回到餐厅"
+func _close_settings() -> void:
+	settings_layer.hide()
 
-func _show_settings_status() -> void:
-	folder_label.text = "Settings: audio on • window 1280×720"
-	folder_label.add_theme_color_override("font_color", COLOR_CYAN)
-
-func _start_agent_run() -> void:
-	game_started = true
-	active_run = false
-	run_button.hide()
-	progress_bar.hide()
-	activity_log.text = "[color=#5a8cff]游戏开始[/color]\n餐厅正式开始工作"
-
-func _pause_game() -> void:
-	pause_layer.show()
-
-func _resume_game() -> void:
-	pause_layer.hide()
-
-func _save_progress() -> void:
-	if not _write_progress_file():
+func _save_model_config() -> void:
+	var model := model_input.text.strip_edges()
+	var base_url := base_url_input.text.strip_edges()
+	var api_key := api_key_input.text.strip_edges()
+	if model.is_empty() or base_url.is_empty() or api_key.is_empty():
+		settings_status.text = "模型、Base URL 和 API Key 都必须填写"
+		settings_status.add_theme_color_override("font_color", UI.ACCENT)
 		return
-	_save_workspace_preference()
-	activity_log.text = "[color=#62e59c]保存成功[/color]\n餐厅进度已保存到本地"
-
-func _write_progress_file() -> bool:
-	var save_data := {
-		"restaurant": selected_folder,
-		"task_count": task_count,
-		"energy": energy,
-		"game_started": game_started,
+	var config := {
+		"model": model,
+		"base_url": base_url,
+		"api_key": api_key,
 	}
-	var save_file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if save_file == null:
-		return false
-	save_file.store_string(JSON.stringify(save_data))
-	return true
-
-func _replace_saved_workspace(folder: String) -> void:
-	if not FileAccess.file_exists(SAVE_PATH):
-		return
-	var save_file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if save_file == null:
-		return
-	var parsed = JSON.parse_string(save_file.get_as_text())
-	if not parsed is Dictionary:
-		return
-	parsed["restaurant"] = folder
-	var updated_file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if updated_file != null:
-		updated_file.store_string(JSON.stringify(parsed))
-
-func _save_workspace_preference() -> void:
-	if selected_folder.is_empty():
-		return
-	var config_file := FileAccess.open(WORKSPACE_CONFIG_PATH, FileAccess.WRITE)
-	if config_file == null:
-		return
-	config_file.store_string(JSON.stringify({"folder": selected_folder}))
-
-func _load_workspace_preference() -> void:
-	if not FileAccess.file_exists(WORKSPACE_CONFIG_PATH):
-		return
-	var config_file := FileAccess.open(WORKSPACE_CONFIG_PATH, FileAccess.READ)
-	if config_file == null:
-		return
-	var data = JSON.parse_string(config_file.get_as_text())
-	if not data is Dictionary:
-		return
-	var saved_folder := str(data.get("folder", ""))
-	if not _workspace_is_available(saved_folder):
-		return
-	selected_folder = saved_folder
-	folder_label.text = "上次位置：%s" % _workspace_display_name(selected_folder)
-	folder_label.add_theme_color_override("font_color", MENU_CREAM)
-
-func _workspace_is_available(folder: String) -> bool:
-	if folder.is_empty():
-		return false
 	if OS.has_feature("web"):
-		return true
-	return DirAccess.dir_exists_absolute(folder)
+		settings_layer.set_loading(true)
+		settings_status.text = "正在保存配置…"
+		_write_model_config_web(JSON.stringify(config, "\t"))
+		return
+	var config_path := selected_folder.path_join(MODEL_CONFIG_FILENAME)
+	if not store.save_model_config(selected_folder, config):
+		settings_status.text = "无法写入配置文件，请检查文件夹权限"
+		settings_status.add_theme_color_override("font_color", UI.ACCENT)
+		return
+	_model_config_saved(config_path)
+
+func _write_model_config_web(config_text: String) -> void:
+	config_write_callback = JavaScriptBridge.create_callback(_model_config_written_from_web)
+	var window = JavaScriptBridge.get_interface("window")
+	window.harnessConfigWritten = config_write_callback
+	var encoded_text := JSON.stringify(config_text)
+	JavaScriptBridge.eval("""
+		(async () => {
+			try {
+				const handle = window.harnessWorkspaceHandle;
+				if (!handle) throw new Error("missing-directory-handle");
+				const fileHandle = await handle.getFileHandle("%s", {create: true});
+				const writable = await fileHandle.createWritable();
+				await writable.write(%s);
+				await writable.close();
+				window.harnessConfigWritten("ok");
+			} catch (error) {
+				window.harnessConfigWritten("error");
+			}
+		})();
+	""" % [MODEL_CONFIG_FILENAME, encoded_text], true)
+
+func _model_config_written_from_web(arguments: Array) -> void:
+	settings_layer.set_loading(false)
+	if not arguments.is_empty() and str(arguments[0]) == "ok":
+		_model_config_saved("%s/%s" % [selected_folder, MODEL_CONFIG_FILENAME])
+		return
+	settings_status.text = "配置写入失败，请重新授权本地文件夹"
+	settings_status.add_theme_color_override("font_color", UI.ACCENT)
+
+func _model_config_saved(_path: String) -> void:
+	settings_status.text = "配置已保存到当前餐厅文件夹"
+	settings_status.add_theme_color_override("font_color", UI.GREEN)
+
+func _set_hamster_running(should_run: bool) -> void:
+	should_run = should_run and api.skills.is_enabled("hamster", "local-time")
+	if restaurant_scene == null:
+		return
+	var generator := restaurant_scene.get_node_or_null("Furniture/ClockPlatform/HamsterGenerator")
+	if generator == null:
+		return
+	var wheel := generator.get_node_or_null("RotatingWheel")
+	var hamster := generator.get_node_or_null("Hamster")
+	if wheel != null:
+		if should_run and wheel.has_method("start"):
+			wheel.start()
+		elif not should_run and wheel.has_method("stop"):
+			wheel.stop()
+	if hamster != null:
+		if should_run and hamster.has_method("play"):
+			hamster.play()
+		elif not should_run and hamster.has_method("stop"):
+			hamster.stop()
+
+func _timekeeper_working_changed(working: bool) -> void:
+	_set_hamster_running(working and game_started)
 
 func _workspace_display_name(folder: String) -> String:
 	if folder.is_empty():
@@ -517,102 +496,6 @@ func _workspace_display_name(folder: String) -> String:
 	var display_name := folder.trim_suffix("/").get_file()
 	return display_name if not display_name.is_empty() else folder
 
-func _finish_agent_run() -> void:
-	active_run = false
-	task_count = maxi(task_count - 1, 0)
-	energy = maxi(energy - 9, 0)
-	run_button.disabled = task_count <= 0
-	run_button.text = "全部订单已完成" if task_count <= 0 else "制作下一份订单"
-	activity_log.append_text("\n[color=#62e59c]SERVED[/color]  菜品已出餐，餐厅进度已保存。")
-
-func _stat_card(parent: Container, label_text: String, value: String, accent: Color) -> Label:
-	var card := PanelContainer.new()
-	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	card.custom_minimum_size.y = 86
-	card.add_theme_stylebox_override("panel", _panel_style(COLOR_PANEL, 12, Color(accent, 0.35)))
-	parent.add_child(card)
-	var box := VBoxContainer.new()
-	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	card.add_child(box)
-	var caption := Label.new()
-	caption.text = label_text
-	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	caption.add_theme_font_size_override("font_size", 11)
-	caption.add_theme_color_override("font_color", COLOR_MUTED)
-	box.add_child(caption)
-	var number := Label.new()
-	number.text = value
-	number.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	number.add_theme_font_size_override("font_size", 23)
-	number.add_theme_color_override("font_color", accent)
-	box.add_child(number)
-	return number
-
-func _section(title_text: String) -> PanelContainer:
-	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", _panel_style(COLOR_PANEL, 16, Color(0.25, 0.42, 0.66, 0.35)))
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 10)
-	panel.add_child(box)
-	var title := Label.new()
-	title.text = title_text
-	title.add_theme_font_size_override("font_size", 12)
-	title.add_theme_color_override("font_color", COLOR_MUTED)
-	box.add_child(title)
-	return panel
-
-func _add_task(parent: VBoxContainer, title: String, meta: String, color: Color) -> void:
-	var card := PanelContainer.new()
-	card.custom_minimum_size.y = 72
-	card.add_theme_stylebox_override("panel", _panel_style(COLOR_PANEL_LIGHT, 10, Color(color, 0.3)))
-	parent.add_child(card)
-	var box := VBoxContainer.new()
-	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	card.add_child(box)
-	var title_label := Label.new()
-	title_label.text = title
-	title_label.add_theme_color_override("font_color", COLOR_TEXT)
-	box.add_child(title_label)
-	var meta_label := Label.new()
-	meta_label.text = meta
-	meta_label.add_theme_font_size_override("font_size", 11)
-	meta_label.add_theme_color_override("font_color", color)
-	box.add_child(meta_label)
-
-func _button(text: String, color: Color, font_color: Color) -> Button:
-	var button := Button.new()
-	button.text = text
-	button.add_theme_font_size_override("font_size", 13)
-	button.add_theme_color_override("font_color", font_color)
-	button.add_theme_color_override("font_hover_color", font_color)
-	button.add_theme_stylebox_override("normal", _panel_style(color, 10, Color(color, 0.8)))
-	button.add_theme_stylebox_override("hover", _panel_style(color.lightened(0.08), 10, Color.WHITE))
-	button.add_theme_stylebox_override("pressed", _panel_style(color.darkened(0.08), 10, Color.WHITE))
-	return button
-
-func _panel_style(color: Color, radius: int, border: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	style.border_color = border
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(radius)
-	style.content_margin_left = 16
-	style.content_margin_right = 16
-	style.content_margin_top = 13
-	style.content_margin_bottom = 13
-	return style
-
-func _cook_button_style(color: Color, border: Color, shadow_size: int) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	style.border_color = border
-	style.set_border_width_all(3)
-	style.set_corner_radius_all(16)
-	style.content_margin_left = 28
-	style.content_margin_right = 28
-	style.content_margin_top = 15
-	style.content_margin_bottom = 15
-	style.shadow_color = Color(0.08, 0.025, 0.01, 0.72)
-	style.shadow_size = shadow_size
-	style.shadow_offset = Vector2(0, 5)
-	return style
+func _folder_selection_canceled() -> void:
+	folder_selection_mode = "open"
+	_load_workspace_preference()

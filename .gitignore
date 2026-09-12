@@ -4,3 +4,8 @@
 
 # System
 .DS_Store
+
+# Local backups and model credentials
+.backups/
+game/config/
+harness_config.json
